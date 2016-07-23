@@ -4,15 +4,15 @@ by Shigeru Chiba
 
 ### Overview
 
-Bytespresso is a translator from Java bytecode into C or C-like languages such as CUDA.
+Bytespresso-C is a translator from Java bytecode into C or C-like languages such as CUDA.
 It has been designed for offloading part of the execution of Java code onto external hardware
 such as GPU, a PC cluster, and a supercomputer.  Since the target application domain is
-high-performance computing, Bytespresso has not been designed for translating a Java
+high-performance computing, Bytespresso-C has not been designed for translating a Java
 program largely exploiting object orientation.  The best platform for such a program
 is the JVM.  Bytespresso rather focuses on parallel numerical computing written with arrays
 but constructed on top of an object-oriented framework.
 
-Bytespresso is similar to a JIT compiler.
+Bytespresso-C is similar to a JIT compiler.
 It dynamically translates the bytecode of a specified method in the running program
 (and the methods directly or indirectly invoked by that method).
 The C code generated after the translation is compiled by an external compiler
@@ -200,14 +200,14 @@ The first parameter to the function is `v1`, the second one is `v2`, ...
 A primitive type in Java is translated into the corresponding primitive type in C.
 
 Another kind of native method is a static method annotated with `@Foreign`.
-The function body is not given to such a native method.  Bytespresso assumes that
+The function body is not given to such a native method.  Bytespresso-C assumes that
 there is a library function with the same name as the `@Foreign` method.
 For example, `javassist.offload.lib.Unsafe.free` is a `@Foreign` method.
 If it is called, the library function `free` in C is called.
 Since garbage collection is not available, all the objects created by `new` in the
 translated code must be deallocated by this `free` method after they become garbage.
 
-Besides native methods, Bytespresso provides compile-time reflection or a compile-time
+Besides native methods, Bytespresso-C provides compile-time reflection or a compile-time
 metaobject protocol.  A metaclass is specified by the `@Metaclass` annotation attached
 to the class declaration.  For example, the metaclass of `javassist.offload.lib.MPI.Request`
 class is `NativeClass`.  The `MPI.Request` class in Java implements a native type
@@ -219,7 +219,7 @@ holding a value of type `MPI_Request`.  A pointer to that value can be obtained 
 Another example of class with a non-standard metaclass is `Float2Array` class
 in `javassist.offload.lib`.  This class is translated into a two-dimensional `float` array in C,
 i.e. `float a[][]`, if the array size is statically determined.
-Bytespresso determines it by data-flow analysis.
+Bytespresso-C determines it by data-flow analysis.
 Note that the use of multi-dimensional array often gives better chance of optimization
 to a C compiler.
 If a `Float2Array` object is constructed on the JVM and passed to the translated code
@@ -268,7 +268,7 @@ first write the following two shell scripts:
 
 Here `bytespresso.c` is the default name of the generated source file
 (for CUDA, it is `bytespresso.cu`).
-Then start the program using Bytespresso with the following VM arguments
+Then start the program using Bytespresso-C with the following VM arguments
 to the Java command:
 
     -Dc.compiler=./compile.sh -Dc.exec=./run.sh
@@ -286,7 +286,9 @@ Here `./bin` is a folder name (or a directory name) included in the class path.
 
 ### Deep reification
 
-The implementation of Bytespresso uses a component named deep reification.
+The implementation of Bytespresso-C uses a component named deep reification
+(this deep-reification component is called Bytespresso.  Bytespresso-C is the
+name of a translator using this component).
 It is a component for constructing an abstract syntax tree from Java bytecode.
 It extracts all the methods including not only a given method but also the
 methods directly or indirectly called by that given method.  Then it
