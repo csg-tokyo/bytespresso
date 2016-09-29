@@ -23,8 +23,27 @@ import javassist.offload.ast.TypeDef;
  */
 public class Reifier {
     /**
-     * Usage example.  It reifies a given method and prints the AST constructed from
-     * that method as the root.
+     * Usage example.  This method reifies itself ({@code main} method)
+     * with the command-line argument {@code args} and prints
+     * the AST of the method.
+     * {@code ClassPool}, {@code CtClass}, and {@code CtMethod} are
+     * provided by Javassist.  They are similar to Java's reflection-API
+     * classes but they are for not runtime but load-time reflection.
+     *
+     * @see www.javassist.org
+     */
+    public static void main(String[] args)
+        throws NotFoundException, BadBytecode    
+    {
+        ClassPool cp = ClassPool.getDefault();
+        CtClass cc = cp.get(Reifier.class.getName());   // get a class object for Reifier
+        CtMethod cm = cc.getDeclaredMethod("main");
+        reifyAndPrint(cm, args);
+    }
+
+    /**
+     * Usage example.  This method reifies a given method and prints
+     * the AST constructed from that method as the root.
      *
      * @param cm        the method.
      * @param args      the actual arguments.

@@ -29,8 +29,8 @@ import javassist.NotFoundException;
  * the control flow.
  *
  * <p>A {@code JVariable} object is a reference to a variable.
- * So there might be multiple {@code JVariable} objects referring to
- * the same variable.
+ * So there might be multiple {@code JVariable} instances referring to
+ * the same variable.  Use {@link #identical(JVariable)} to test their identity.
  * </p>
  */
 public class JVariable extends Variable {

@@ -1,0 +1,120 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>org.javassist</groupId>
+  <artifactId>bytespresso</artifactId>
+  <description>
+        Bytespresso and deep reification.
+  </description>
+  <name>Bytespresso</name>
+  <organization>
+    <name>Shigeru Chiba, www.javassist.org</name>
+  </organization>
+
+  <version>1.0-GA</version>
+
+  <licenses>
+    <!-- this is the license under which javassist is usually distributed
+      -->
+    <license>
+      <name>MPL 1.1</name>
+      <url>http://www.mozilla.org/MPL/MPL-1.1.html</url>
+    </license>
+    <!-- this is the license under which javassist is distributed when
+	 it is bundled with JBoss
+      -->
+    <license>
+      <name>LGPL 2.1</name>
+      <url>http://www.gnu.org/licenses/lgpl-2.1.html</url>
+    </license>
+    <!-- this is the license under which javassist can be distributed.
+      -->
+    <license>
+      <name>Apache License 2.0</name>
+      <url>http://www.apache.org/licenses/</url>
+    </license>
+  </licenses>
+
+  <scm>
+    <connection>scm:git:git@github.com:csg-tokyo/bytespresso.git</connection>
+    <developerConnection>scm:git:git@github.com:csg-tokyo/bytespresso.git</developerConnection>
+    <url>scm:git:git@github.com:csg-tokyo/bytespresso.git</url>
+  </scm>
+
+  <developers>
+    <developer>
+      <id>chiba</id>
+      <name>Shigeru Chiba</name>
+      <organization>The University of Tokyo</organization>
+      <organizationUrl>http://www.csg.ci.i.u-tokyo.ac.jp/</organizationUrl>
+      <roles>
+        <role>project lead</role>
+      </roles>
+      <timezone>9</timezone>
+    </developer>
+  </developers>
+
+  <build>
+    <sourceDirectory>src/main/</sourceDirectory>
+    <testSourceDirectory>src/test/</testSourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.2</version>
+        <configuration>
+          <source>1.8</source>
+          <target>1.8</target>
+          <testSource>1.8</testSource>
+          <testTarget>1.8</testTarget>
+          <testCompilerArgument>-parameters</testCompilerArgument>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <version>2.6</version>
+        <configuration>
+          <archive>
+            <manifest>
+              <mainClass>javassist.offload.reify.Reifier</mainClass>
+              <addDefaultSpecificationEntries>true</addDefaultSpecificationEntries>
+            </manifest>
+          </archive>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <reporting>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <docencoding>UTF-8</docencoding>
+            <charset>UTF-8</charset>
+            <encoding>UTF-8</encoding>
+            <bottom></bottom>
+          </configuration>
+      </plugin>
+    </plugins>
+  </reporting>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.javassist</groupId>
+      <artifactId>javassist</artifactId>
+      <version>3.21.0</version>
+      <scope>system</scope>
+      <optional>true</optional>
+      <systemPath>${basedir}/javassist.jar</systemPath>
+    </dependency>
+
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.8.2</version>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
+</project>

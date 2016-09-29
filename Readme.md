@@ -318,7 +318,12 @@ The following code is an example:
             System.out.println(f);
 
 See `reifyAndPrint` method in `javassist.offload.reify.Reifier`
-for the complete code.
+for the complete code.  Also see `main` in
+`javassist.offload.reify.Reifier`.
+`CtMethod` is a class provided by Javassist bytecode engineering
+toolkit (see `www.javassist.org`).  It is similar to
+`java.lang.reflect.Method` but enables an access to bytecode.
+
 `reifier.snap()` extracts a snapshot of the current execution
 environment that is necessary to invoke `cm` with arguments `args`.
 It is a self-contained minimum part of the environment.
@@ -381,7 +386,7 @@ when no `@Metaclass` is attached to the method.
 
 ### Developers' notes
 
-`src/test/javassist/offload/test/Runner.java` runs unit-tests.
+`src/test/javassist/offload/test/Runner.java` runs tests.
 
 ### What is a metaclass?
 
