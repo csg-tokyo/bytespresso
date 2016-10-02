@@ -20,7 +20,7 @@ public class TmpVariable extends Variable {
      *
      * @param t     the type of this variable.
      * @param val   the value of this variable if it is constant.
-     *              Othersise, null.
+     *              Otherwise, null.
      * @param id    a unique identifier number.
      *
      * @see javassist.offload.reify.UniqueID#tmpVarId()

@@ -159,10 +159,10 @@ public class Inliner {
         return var;
     }
 
-	/**
-	 * @param arg                  the argument.
-	 * @param typedValue           the normalized value of the argument.  It may be null.
-	 */
+    /**
+     * @param arg                  the argument.
+     * @param typedValue           the normalized value of the argument.  It may be null.
+     */
     protected int inlineOneArgument(Function callee, ArrayList<Variable> vars,
                 ASTreeList<ASTree> exprs, JVariable.Map map, int var, int paramIndex,
                 ASTree arg, ASTree typedValue)

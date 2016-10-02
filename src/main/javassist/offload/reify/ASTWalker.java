@@ -354,6 +354,10 @@ public class ASTWalker {
         findLiveBlocks(body.block(block.index() + 1), body, incoming);
     }
 
+    /**
+     * Returns a goto statement if {@code st} is a branch and the
+     * branch condition is a compile-time constant.
+     */
     private static ASTree isGoto(ASTree st) throws NotFoundException {
         if (st instanceof Branch) {
             Branch b = (Branch)st;

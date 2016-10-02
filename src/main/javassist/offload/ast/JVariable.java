@@ -20,12 +20,12 @@ import javassist.NotFoundException;
  * 4:     v = -1;
  * 5: w = v;</pre></ul>
  *
- * <p>This code makes two JVariable objects: one for {@code v} in line 2,
+ * <p>This code makes two JVariable objects for {@code v}: one for {@code v} in line 2,
  * one for {@code v} in line 4 and 5.  Line 1 and 2, Line 4, and
  * Line 5 make a basic block, respectively.
  * The latter JVariable object is not an SSA variable.
  * {@link #value()} on this object returns null.
- * {@link #value()} on {@code w} also returns null since it is either 1 or -1 and it depends on
+ * {@link #value()} on {@code w} in line 5 also returns null since it is either 1 or -1 and it depends on
  * the control flow.
  *
  * <p>A {@code JVariable} object is a reference to a variable.
