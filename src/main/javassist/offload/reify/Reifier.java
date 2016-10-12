@@ -23,8 +23,8 @@ import javassist.offload.ast.TypeDef;
  */
 public class Reifier {
     /**
-     * Usage example.  This method reifies itself ({@code main} method)
-     * with the command-line argument {@code args} and prints
+     * Usage example.  This method reifies {@code abs} method in
+     * {@code java.lang.Math} and prints
      * the AST of the method.
      * {@code ClassPool}, {@code CtClass}, and {@code CtMethod} are
      * provided by Javassist.  They are similar to Java's reflection-API
@@ -36,9 +36,9 @@ public class Reifier {
         throws NotFoundException, BadBytecode    
     {
         ClassPool cp = ClassPool.getDefault();
-        CtClass cc = cp.get(Reifier.class.getName());   // get a class object for Reifier
-        CtMethod cm = cc.getDeclaredMethod("main");
-        reifyAndPrint(cm, args);
+        CtClass cc = cp.get(java.lang.Math.class.getName());   // get a class object for java.lang.Math
+        CtMethod cm = cc.getDeclaredMethod("abs");
+        reifyAndPrint(cm, new Object[] { -3 });
     }
 
     /**

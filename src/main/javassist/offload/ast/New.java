@@ -138,7 +138,8 @@ public class New extends ASTree {
      */
     public void isStatement(ASTree ast) {
         isStatement = ast;
-        constructor.isStatement(this);
+        if (constructor != null)
+            constructor.isStatement(this);
     }
 
     /**
@@ -169,14 +170,17 @@ public class New extends ASTree {
         sb.append(type.getName());
         sb.append('(');
         boolean first = true;
-        for (ASTree arg: arguments()) {
-            if (first)
-                first = false;
-            else
-                sb.append(", ");
+        if (constructor == null)
+            sb.append("??");
+        else
+            for (ASTree arg: arguments()) {
+                if (first)
+                    first = false;
+                else
+                    sb.append(", ");
                 
-            sb.append(arg);
-        }
+                sb.append(arg);
+            }
 
         sb.append(')');
         return sb.toString();
