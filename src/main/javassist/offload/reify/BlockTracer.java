@@ -181,7 +181,7 @@ public class BlockTracer {
     private void saveStackFrame() {
         for (int i = 0; i < stackTop; i++) {
             ASTree v = stackFrame[i];
-            if (v != null && !(v instanceof TmpVariable)) {
+            if (v != null && !(v instanceof TmpVariable) && !(v instanceof New)) {
                 TmpVariable tmp = new TmpVariable(v.type(), v, uniqueID.tmpVarId());
                 insertAtTail(new Assign(tmp.type(), tmp, v));
                 stackFrame[i] = tmp;
