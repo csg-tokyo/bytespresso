@@ -23,7 +23,7 @@ import javassist.offload.ast.TypeDef;
  */
 public class Reifier {
     /**
-     * Usage example.  This method reifies {@code abs} method in
+     * Usage example.  This method reifies {@code round} method in
      * {@code java.lang.Math} and prints
      * the AST of the method.
      * {@code ClassPool}, {@code CtClass}, and {@code CtMethod} are
@@ -37,8 +37,8 @@ public class Reifier {
     {
         ClassPool cp = ClassPool.getDefault();
         CtClass cc = cp.get(java.lang.Math.class.getName());   // get a class object for java.lang.Math
-        CtMethod cm = cc.getDeclaredMethod("abs");
-        reifyAndPrint(cm, new Object[] { -3 });
+        CtMethod cm = cc.getDeclaredMethod("round");
+        reifyAndPrint(cm, new Object[] { -3.5F });
     }
 
     /**
