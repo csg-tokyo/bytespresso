@@ -7,6 +7,8 @@ import java.io.OutputStream;
 import java.util.function.Consumer;
 import java.util.function.IntFunction;
 
+import org.junit.Test;
+
 import javassist.ClassPool;
 import javassist.CtBehavior;
 import javassist.CtClass;
@@ -39,6 +41,7 @@ import javassist.offload.javatoc.impl.StandaloneMain;
 import javassist.offload.javatoc.impl.StdMainFunction;
 import javassist.offload.javatoc.impl.Task;
 import javassist.offload.lib.Deserializer;
+import javassist.offload.lib.DoubleArray;
 import javassist.offload.lib.DoubleArray2D;
 import javassist.offload.lib.FloatArray2D;
 import javassist.offload.lib.FloatArray3D;
@@ -55,18 +58,24 @@ import javassist.offload.reify.Reifier;
 
 public class Runner {
     /**
-     * To run, ./javassit.jar exists and all the class files must be under ./bin.
-     * The JVM option -Djdk.internal.lambda.dumpProxyClasses=./bin must be given.
+     * True if conservative gc is used.
+     */
+    public static final boolean useGC = false;
+
+    /**
+     * To run, ./javassit.jar must exist.
+     * The JVM option -Djdk.internal.lambda.dumpProxyClasses=./bin must be given,
+     * where ./bin is a directory included in CLASSPATH.
      */
     public static void main(String[] args) throws Exception {
-        main2(args);
+        new Runner().main2(args);
     }
 
     public static void main1(String[] args) throws Exception {
-        testFinal();
+        new Runner().testDouble2Array();
     }
 
-    public static void main2(String[] args) throws Exception {
+    public void main2(String[] args) throws Exception {
         // tester("javassist.offload.decompiler.BasicBlock", "make");
         // tester("javassist.offload.decompiler.Runner", "fib0");
 
@@ -113,6 +122,7 @@ public class Runner {
         testArrays();
         testF3Array();
         testFloat2Array();
+        testDouble2Array();
         testFinalAnno();
         testIntrinsic();
         testIntrinsicLoop();
@@ -247,10 +257,10 @@ public class Runner {
         return out;
     }
 
-    public static void testUnsafe() throws Exception {
+    public @Test void testUnsafe() throws Exception {
         float fvalue = 3.0F;
         double dvalue = 7.0;
-        Object r = tester("javassist.offload.Runner", "identityUnsafe", new Object[] { fvalue, dvalue });
+        Object r = tester("javassist.offload.test.Runner", "identityUnsafe", new Object[] { fvalue, dvalue });
         int[] a = (int[])r;
         long j = Double.doubleToLongBits(dvalue);
         if (a[0] == Float.floatToIntBits(fvalue))
@@ -273,7 +283,7 @@ public class Runner {
         return a;
     }
 
-    public static void test1() throws Exception {
+    public @Test void test1() throws Exception {
         final Task.Sender sender = new Task.Sender() {
             public void write(OutputStream out) throws IOException {
                 final int num = Integer.MIN_VALUE;
@@ -306,7 +316,7 @@ public class Runner {
 
         }};
 
-        tester("javassist.offload.Runner", "identity", sender, recv);
+        tester("javassist.offload.test.Runner", "identity", sender, recv);
     }
 
     public static void identity() {
@@ -332,7 +342,7 @@ public class Runner {
         Jvm.writeShort(s);
     }
 
-    public static void arrayTest() throws Exception {
+    public @Test void arrayTest() throws Exception {
         Task.Sender sender = new Task.Sender() {
             public void write(OutputStream out) throws IOException {
                 byte[] ba = new byte[] { 10, 20, 30 };
@@ -388,7 +398,7 @@ public class Runner {
             }
         };
 
-        tester("javassist.offload.Runner", "identity2", sender, recv);
+        tester("javassist.offload.test.Runner", "identity2", sender, recv);
     }
 
     public static void identity2() {
@@ -430,7 +440,7 @@ public class Runner {
         return ja;
     }
 
-    public static void testObj() throws Exception {
+    public @Test void testObj() throws Exception {
         ClassPool cp = ClassPool.getDefault();
         CtClass cc = cp.get(Runner.class.getName());
         CtMethod cm = cc.getDeclaredMethod("identity3");
@@ -483,7 +493,7 @@ public class Runner {
         }
     }
 
-    public static void testObj1() throws Exception {
+    public @Test void testObj1() throws Exception {
         ClassPool cp = ClassPool.getDefault();
         CtClass cc = cp.get(Runner.class.getName());
         CtMethod cm = cc.getDeclaredMethod("identity35");
@@ -515,7 +525,7 @@ public class Runner {
         Jvm.writeInt(res);
     }
 
-    public static void testObj2() throws Exception {
+    public @Test void testObj2() throws Exception {
         ClassPool cp = ClassPool.getDefault();
         CtClass cc = cp.get(Runner.class.getName());
         CtMethod cm = cc.getDeclaredMethod("identity4");
@@ -606,7 +616,7 @@ public class Runner {
         public long j;
     }
 
-    public static void testObj3() throws Exception {
+    public @Test void testObj3() throws Exception {
         ClassPool cp = ClassPool.getDefault();
         CtClass cc = cp.get(Runner.class.getName());
         CtMethod cm = cc.getDeclaredMethod("identity5");
@@ -672,7 +682,7 @@ public class Runner {
         public C10E() { value = 7; }
     }
 
-    public static void testObj10() throws Exception {
+    public @Test void testObj10() throws Exception {
         Task.Sender sender = new Task.Sender() {
             public void write(OutputStream out) throws IOException {
             }
@@ -710,7 +720,7 @@ public class Runner {
         c4b.left = c4;
         c4b.dval = 8.8;
         D4 d4 = new D4(c4);
-        tester("javassist.offload.Runner", "identity10", new Object[] { c10, d4 }, null, recv);
+        tester("javassist.offload.test.Runner", "identity10", new Object[] { c10, d4 }, null, recv);
     }
 
     public static void identity10(C10 c10, D4 d4) {
@@ -751,29 +761,29 @@ public class Runner {
         Util.exit(99);
     }
 
-    public static void testObj11() throws Exception {
-        Object r = tester("javassist.offload.Runner", "identity11", new Object[] { new C10E() });
+    public @Test void testObj11() throws Exception {
+        Object r = tester("javassist.offload.test.Runner", "identity11", new Object[] { new C10E() });
         int i = ((Integer)r).intValue();
         if (i != 7)
             throw new Exception("int return value: " + i);
         else
             System.out.println("testObj11 OK");
 
-        r = tester("javassist.offload.Runner", "identity12", new Object[] { new C10E() });
+        r = tester("javassist.offload.test.Runner", "identity12", new Object[] { new C10E() });
         double d = ((Double)r).doubleValue();
         if (d != 7.0)
             throw new Exception("double return value: " + d);
         else
             System.out.println("testObj12 OK");
 
-        r = tester("javassist.offload.Runner", "identity13", new Object[] { new C10E() });
+        r = tester("javassist.offload.test.Runner", "identity13", new Object[] { new C10E() });
         boolean b = ((Boolean)r).booleanValue();
         if (b)
             throw new Exception("boolean return value: " + b);
         else
             System.out.println("testObj13 OK");
 
-        r = tester("javassist.offload.Runner", "identity14", new Object[] { new C10E() });
+        r = tester("javassist.offload.test.Runner", "identity14", new Object[] { new C10E() });
         double[] da = (double[])r;
         if (da.length == 2 && da[1] == 7.0)
             System.out.println("testObj14 OK");
@@ -819,9 +829,9 @@ public class Runner {
         C15b(int i) { value = i; }
     }
 
-    public static void testObj15() throws Exception {
+    public @Test void testObj15() throws Exception {
         C15 c15 = new C15(2, new C15sub(3));
-        Object r = tester("javassist.offload.Runner", "identity15", new Object[] { c15, c15.next, c15.next });
+        Object r = tester("javassist.offload.test.Runner", "identity15", new Object[] { c15, c15.next, c15.next });
         int i = ((Integer)r).intValue();
         if (i != 7)
             throw new Exception("int return value: " + i);
@@ -848,10 +858,10 @@ public class Runner {
         long j;
     }
 
-    public static void testString() throws Exception {
+    public @Test void testString() throws Exception {
         Cstr c = new Cstr();
         c.s = "1foo";
-        Object r = tester("javassist.offload.Runner", "identityStr", new Object[] { "Hello\n", c });
+        Object r = tester("javassist.offload.test.Runner", "identityStr", new Object[] { "Hello\n", c });
         int i = ((Integer)r).intValue();
         if (i != 14)
             throw new Exception("int return value: " + i);
@@ -870,7 +880,7 @@ public class Runner {
         return s.length() + c.s.length() + s3.length() + "1".length();
     }
 
-    public static void testExchangeString() throws Exception {
+    public @Test void testExchangeString() throws Exception {
         Task.Sender sender = new Task.Sender() {
             public void write(OutputStream out) throws IOException {
                 Jvm.writeString(out, "ABD ;");
@@ -886,7 +896,7 @@ public class Runner {
                 System.out.println(" testExchString output: `" + s + "`, `" + s2 + "`");
         }};
 
-        tester("javassist.offload.Runner", "identityStr2", sender, recv);
+        tester("javassist.offload.test.Runner", "identityStr2", sender, recv);
     }
 
     public static void identityStr2() {
@@ -902,8 +912,8 @@ public class Runner {
         Jvm.writeString(s2);
     }
 
-    public static void testRemote() throws Exception {
-        Object r = tester("javassist.offload.Runner", "identityRemote", new Object[] { 1000 });
+    public @Test void testRemote() throws Exception {
+        Object r = tester("javassist.offload.test.Runner", "identityRemote", new Object[] { 1000 });
         int i = ((Integer)r).intValue();
         if (i != 1127)
             throw new Exception("int return value: " + i);
@@ -933,9 +943,9 @@ public class Runner {
         return d;
     }
 
-    public static void testRemote2() throws Exception {
+    public @Test void testRemote2() throws Exception {
         String str = "remoteStr";
-        Object r = tester("javassist.offload.Runner", "identityRemote2", new Object[] { str });
+        Object r = tester("javassist.offload.test.Runner", "identityRemote2", new Object[] { str });
         if (!r.equals(str))
             throw new Exception("testRemote2: " + r);
         else
@@ -950,8 +960,8 @@ public class Runner {
         return s;
     }
 
-    public static void testStandalone() throws Exception {
-        aloneTester("javassist.offload.Runner", "identityAlone", new Object[] { 3000 });
+    public @Test void testStandalone() throws Exception {
+        aloneTester("javassist.offload.test.Runner", "identityAlone", new Object[] { 3000 });
         System.out.println("testStandalone OK");
     }
 
@@ -1001,7 +1011,7 @@ public class Runner {
         public static void printStr(String s) {}
     }
 
-    public static void testStdDriver2() throws Exception {
+    public @Test void testStdDriver2() throws Exception {
         StdDriver2 d = new StdDriver2();
         int i = (Integer)d.invoke(StdDrvTest.class, "test", new StdDrvTest(4000), new Object[] { 123 });
         if (i == 4123)
@@ -1025,7 +1035,7 @@ public class Runner {
         }
     }
 
-    public static void testStdDriver() throws Exception {
+    public @Test void testStdDriver() throws Exception {
         StdDriver drv = new StdDriver();
         final StdDrvTest3 sdt3 = new StdDrvTest3(10);
         final int i = 7;
@@ -1043,7 +1053,7 @@ public class Runner {
         });
     }
 
-    public static void testStdDriver4() throws Exception {
+    public @Test void testStdDriver4() throws Exception {
         int i = new StdDriver().invoke(() -> {
             return 77;
         });
@@ -1053,7 +1063,7 @@ public class Runner {
             throw new Exception("testStdDriver4 " + i);
     }
 
-    public static void testStdDriver5() throws Exception {
+    public @Test void testStdDriver5() throws Exception {
         double i = new StdDriver().invoke(() -> {
             return 77.7;
         });
@@ -1066,7 +1076,7 @@ public class Runner {
     @Metaclass(type=NativeClass.class, arg = "sizeof(double)")
     public static class NCTest { double i; }
 
-    public static void testNativeClass() throws Exception {
+    public @Test void testNativeClass() throws Exception {
         StdDriver2 d = new StdDriver2();
         int i = (Integer)d.invoke(Runner.class, "testNC", null, new Object[] { new NCTest() });
         if (i == 7)
@@ -1104,7 +1114,7 @@ public class Runner {
         return in.foo();
     }
 
-    public static void testInline1() throws Exception {
+    public @Test void testInline1() throws Exception {
         StdDriver2 d = new StdDriver2();
         int i = (Integer)d.invoke(Runner.class, "testIn1", null, new Object[] { new Inline2() });
         if (i == 2)
@@ -1128,8 +1138,8 @@ public class Runner {
         public int bar() { return 3; }
     }
 
-    public static void testDispatcher() throws Exception {
-        Object r = tester("javassist.offload.Runner", "funcDispatcher", new Object[] { 3, new CDispatch2() });
+    public @Test void testDispatcher() throws Exception {
+        Object r = tester("javassist.offload.test.Runner", "funcDispatcher", new Object[] { 3, new CDispatch2() });
         int i = ((Integer)r).intValue();
         if (i != 232)
             throw new Exception("int return value: " + i);
@@ -1148,8 +1158,8 @@ public class Runner {
         return c.foo() + c2.foo() * 10 + c3.bar() * 100;
     }
 
-    public static void testDispatcher1() throws Exception {
-        Object r = tester("javassist.offload.Runner", "funcDispatcher1", new Object[] { 3, new CDispatch() });
+    public @Test void testDispatcher1() throws Exception {
+        Object r = tester("javassist.offload.test.Runner", "funcDispatcher1", new Object[] { 3, new CDispatch() });
         int i = ((Integer)r).intValue();
         if (i != 101)
             throw new Exception("int return value: " + i);
@@ -1167,8 +1177,8 @@ public class Runner {
         return c.foo() + c3.bar() * 100;
     }
 
-    public static void testDispatcher2() throws Exception {
-        Object r = tester("javassist.offload.Runner", "funcDispatcher2", new Object[] { 3, new CDispatch2() });
+    public @Test void testDispatcher2() throws Exception {
+        Object r = tester("javassist.offload.test.Runner", "funcDispatcher2", new Object[] { 3, new CDispatch2() });
         int i = ((Integer)r).intValue();
         if (i != 331)
             throw new Exception("int return value: " + i);
@@ -1193,8 +1203,8 @@ public class Runner {
         return r + c3.foo() * 100;
     }
 
-    public static void testDispatcher3() throws Exception {
-        Object r = tester("javassist.offload.Runner", "funcDispatcher3", new Object[] { 3, new CDispatch2() });
+    public @Test void testDispatcher3() throws Exception {
+        Object r = tester("javassist.offload.test.Runner", "funcDispatcher3", new Object[] { 3, new CDispatch2() });
         int i = ((Integer)r).intValue();
         if (i != 2222331)
             throw new Exception("int return value: " + i);
@@ -1225,7 +1235,7 @@ public class Runner {
         double body(int i);
     }
 
-    public static void testClosure() throws Exception {
+    public @Test void testClosure() throws Exception {
         StdDriver2 d = new StdDriver2();
         double res = (Double)d.invoke(Runner.class, "closureTest", null, new Object[] {});
         if (res == 45.0)
@@ -1249,7 +1259,7 @@ public class Runner {
         return sum;
     }
 
-    public static void testMultiArray() throws Exception {
+    public @Test void testMultiArray() throws Exception {
         StdDriver2 d = new StdDriver2();
         MultiArray ma = new MultiArray();
         double res = (Double)d.invoke(Runner.class, "multArrayTest", null, new Object[] { ma });
@@ -1291,7 +1301,7 @@ public class Runner {
         public void set(int i, int j, double v) { data[i * ylen() + j] = v; }
     }
 
-    public static void testMultiArray2() throws Exception {
+    public @Test void testMultiArray2() throws Exception {
         StdDriver2 d = new StdDriver2();
         DoubleArray2D ma = new DoubleArray2D(7, 3);
         double res = (Double)d.invoke(Runner.class, "multArrayTest2", null, new Object[] { ma });
@@ -1327,7 +1337,7 @@ public class Runner {
         int doit(int j);
     }
 
-    public static void testInnerClass() throws Exception {
+    public @Test void testInnerClass() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (Integer)d.invoke(Runner.class, "innerClassTest", null, new Object[] { 7 });
         if (res != 118)
@@ -1349,7 +1359,7 @@ public class Runner {
         return i;
     }
 
-    public static void testImmutable() throws Exception {
+    public @Test void testImmutable() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (Integer)d.invoke(Runner.class, "immutableTest", null, new Object[] { 7 });
         if (res != 37)
@@ -1373,7 +1383,7 @@ public class Runner {
         return obj.get() + k;
     }
 
-    public static void testImmutable2() throws Exception {
+    public @Test void testImmutable2() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (Integer)d.invoke(Runner.class, "immutableTest2", null, new Object[] { 8, 10 });
         if (res != 807070)
@@ -1424,7 +1434,7 @@ public class Runner {
         return obj.test(k);
     }
 
-    public static void testImmutable3() throws Exception {
+    public @Test void testImmutable3() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (Integer)d.invoke(Runner.class, "immutableTest3", null, new Object[] { -8, 10 });
         if (res != 7000)
@@ -1452,7 +1462,7 @@ public class Runner {
         public int test(int k) { return value.test(k); }
     }
 
-    public static void testImmutable4() throws Exception {
+    public @Test void testImmutable4() throws Exception {
         StdDriver2 d = new StdDriver2();
         ImmutableObj2B b = new ImmutableObj2B(3);
         ImmutableObj2I i = b;
@@ -1483,7 +1493,7 @@ public class Runner {
         public int test(int k) { return value * k; }
     }
 
-    public static void testImmutable5() throws Exception {
+    public @Test void testImmutable5() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (Integer)d.invoke(Runner.class, "immutableTest5", null, new Object[0]);
         if (res != 418)
@@ -1517,7 +1527,7 @@ public class Runner {
         public final int value2 = 100;
     }
 
-    public static void testImmutableArray() throws Exception {
+    public @Test void testImmutableArray() throws Exception {
         StdDriver2 d = new StdDriver2();
         ImmutableObj2D b = new ImmutableObj2D(3);
         ImmutableObj2I i = b;
@@ -1540,7 +1550,7 @@ public class Runner {
         return array[0].value + array2[0].test(10) + array3[0].test(100) + array[1].value;
     }
 
-    public static void testRemoteAndCallback() throws Exception {
+    public @Test void testRemoteAndCallback() throws Exception {
         StdDriver2 d = new StdDriver2();
         int j = (Integer)d.invoke(Runner.class.getDeclaredMethod("remoteAndCallback", new Class<?>[] { int.class } ),
                                   null, new Object[] { 3 },
@@ -1577,7 +1587,7 @@ public class Runner {
         return k + 1;
     }
 
-    public static void testRemoteBandwidth() throws Exception {
+    public @Test void testRemoteBandwidth() throws Exception {
         StdDriver2 d = new StdDriver2();
         int k = 1000000; // 1,000 K
         double j = (Double)d.invoke(Runner.class.getDeclaredMethod("remoteBandwidth", new Class<?>[] { int.class } ),
@@ -1631,7 +1641,7 @@ public class Runner {
         return r;
     }
 
-    public static void testRemoteBandwidthInt() throws Exception {
+    public @Test void testRemoteBandwidthInt() throws Exception {
         StdDriver2 d = new StdDriver2();
         int k = 1000000; // 1,000 K
         int j = (Integer)d.invoke(Runner.class.getDeclaredMethod("remoteBandwidthInt", new Class<?>[] { int.class } ),
@@ -1685,7 +1695,7 @@ public class Runner {
         return r;
     }
 
-    public static void testRemoteBandwidthByte() throws Exception {
+    public @Test void testRemoteBandwidthByte() throws Exception {
         StdDriver2 d = new StdDriver2();
         int k = 4000000 * 10; // 40 MB
         int j = (Integer)d.invoke(Runner.class.getDeclaredMethod("remoteBandwidthByte", new Class<?>[] { int.class } ),
@@ -1773,7 +1783,7 @@ public class Runner {
         public int bar() { return obj.foo(); } 
     }
 
-    public static void testConsObject() throws Exception {
+    public @Test void testConsObject() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "consObjectTest", null, new Object[] { new ConsObj2() });
         if (res == 6)
@@ -1789,7 +1799,7 @@ public class Runner {
         return r + new ConsObj(p, 1).bar() + new ConsObj(p, 1.0).bar();
     }
 
-    public static void testArrays() throws Exception {
+    public @Test void testArrays() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "arraysTest", null, new Object[] { new int[3], new double[4], new Object[10] });
         if (res == 617)
@@ -1819,7 +1829,7 @@ public class Runner {
         return ia2.length + da2.length + oa2.length + ia3.length + da3.length + oa3.length;
     }
 
-    public static void testF3Array() throws Exception {
+    public @Test void testF3Array() throws Exception {
         StdDriver2 d = new StdDriver2();
         FloatArray3D a = new FloatArray3D(10, 20, 30);
         float res = (float)d.invoke(Runner.class, "f3arrayTest", null, new Object[] { a }); 
@@ -1851,7 +1861,7 @@ public class Runner {
         return f;
     }
 
-    public static void testFloat2Array() throws Exception {
+    public @Test void testFloat2Array() throws Exception {
         StdDriver2 drv = new StdDriver2();
         FloatArray fa1 = new FloatArray(8, false);
         FloatArray2D fa2 = new FloatArray2D(8, 4, false);
@@ -1880,7 +1890,33 @@ public class Runner {
         }
     }
 
-    public static void testFinalAnno() throws Exception {
+    public @Test void testDouble2Array() throws Exception {
+        StdDriver2 drv = new StdDriver2();
+        DoubleArray fa1 = new DoubleArray(8, false);
+        DoubleArray2D fa2 = new DoubleArray2D(8, 4, false);
+        int res = (int)drv.invoke(Runner.class, "double2ArrayTest", null,
+                            new Object[] { fa1, fa2, new Double2ArrayTestClass(1) });
+        if (res == 12)
+            System.out.println("testDouble2Array OK");
+        else
+            throw new Exception("testDouble2Array " + res);
+    }
+
+    public static int double2ArrayTest(DoubleArray fa1, DoubleArray2D fa2, Double2ArrayTestClass cc) {
+        fa1.set(1, 1);
+        fa2.set(2,  3, 10);
+        return (int)(fa1.get(1) + fa2.get(2, 3) + cc.value(fa1));
+    }
+
+    static class Double2ArrayTestClass {
+        final int i;
+        public Double2ArrayTestClass(int v) { i = v; }
+        @Inline public double value(DoubleArray fa) {
+            return fa.get(i);
+        }
+    }
+
+    public @Test void testFinalAnno() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = -1;
         try {
@@ -1911,7 +1947,7 @@ public class Runner {
         public static Integer i2;
     }
 
-    public static void testIntrinsic() throws Exception {
+    public @Test void testIntrinsic() throws Exception {
         StdDriver2 d = new StdDriver2();
         TestIntrinsic.i1 = 600;
         TestIntrinsic.i2 = 8000;
@@ -1939,7 +1975,7 @@ public class Runner {
         CCode.make("/* intrinsic ").add(s).add(" ").add((Code)var).add(" ").add(s2).add(" */").emit();;
     }
 
-    public static void testIntrinsicLoop() throws Exception {
+    public @Test void testIntrinsicLoop() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "intrinsicLoopTest", null, new Object[] { 3, 7 });
         if (res == 73)
@@ -1986,7 +2022,7 @@ public class Runner {
                    .add((Code)expr).add(";").newLine().add("}").noSemicolon().emit();
     }
 
-    public static void testIntrinsic2() throws Exception {
+    public @Test void testIntrinsic2() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "intrinsicTest2", null, new Object[] { 8, 7 });
         if (res == 834)
@@ -2018,10 +2054,10 @@ public class Runner {
             return 0;
     }
 
-    public static void testIntrinsic3() throws Exception {
+    public @Test void testIntrinsic3() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "intrinsicTest3", null, new Object[2]);
-        if (res == 834)
+        if (res == 83)
             System.out.println("testIntrinsi2c OK");
         else
             throw new Exception("testIntrinsic2 " + res);
@@ -2073,7 +2109,7 @@ public class Runner {
         return v.add(v2).add(v2).x;     // add(add(v, v2), v2)
     }
 
-    public static void testRecursion() throws Exception {
+    public @Test void testRecursion() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "recursionTest", null, new Object[] { 3, 7 });
         if (res == 27)
@@ -2101,7 +2137,7 @@ public class Runner {
         }
     }
 
-    public static void testForeignClass() throws Exception {
+    public @Test void testForeignClass() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "foreignClassTest", null, new Object[] {});
         if (res == 1)
@@ -2133,7 +2169,7 @@ public class Runner {
         public static int t = 20; 
     }
 
-    public static void testFieldAccess() throws Exception {
+    public @Test void testFieldAccess() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "fieldAccessTest", null, new Object[] { new FATest2(), new FATest2() });
         if (res == 36)
@@ -2155,7 +2191,7 @@ public class Runner {
         public @NativePtr Object get(int i) { return null; }    
     }
 
-    public static void testNativeArrayClass() throws Exception {
+    public @Test void testNativeArrayClass() throws Exception {
         StdDriver2 d = new StdDriver2();
         long res = (long)d.invoke(Runner.class, "nativeArrayTest", null, new Object[] {});
         if (res == 0L)
@@ -2181,7 +2217,7 @@ public class Runner {
         ArrayInit(int v) { value = v; }
     }
 
-    public static void testArrayInit() throws Exception {
+    public @Test void testArrayInit() throws Exception {
         StdDriver2 d = new StdDriver2();
         ArrayInit[] a = { new ArrayInit(3), new ArrayInit(40) };
         int[] a2 = { 0, 0 };
@@ -2199,7 +2235,7 @@ public class Runner {
                + a2[0] + a2[1] + b2[0] + b2[1];
     }
 
-    public static void testDataflow() throws Exception {
+    public @Test void testDataflow() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "dataflowTest", null, new Object[] { new Inline1(), new Inline1(), 0});
         if (res == 23)
@@ -2218,7 +2254,7 @@ public class Runner {
         return sum + in2.foo() * 10;
     }
 
-    public static void testDataflow2() throws Exception {
+    public @Test void testDataflow2() throws Exception {
         StdDriver2 d = new StdDriver2();
         d.invoke(Runner.class, "dataflowTest2b", null, new Object[] { 2 });
         System.out.println("testDataflow2 OK");
@@ -2235,7 +2271,7 @@ public class Runner {
         return;
     }
 
-    public static void testInlining() throws Exception {
+    public @Test void testInlining() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inliningTest", null, new Object[] { new InlineT0(), new InlineT2() });
         if (res == 2212)
@@ -2270,7 +2306,7 @@ public class Runner {
         return t0.get() + t1.get() * 10 + r * 100 + t0.get2() * 1000;
     }
 
-    public static void testInlining2() throws Exception {
+    public @Test void testInlining2() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inliningTest2", null, new Object[] {});
         if (res == 7)
@@ -2289,7 +2325,7 @@ public class Runner {
         return k.getI();
     }
 
-    public static void testInlining3() throws Exception {
+    public @Test void testInlining3() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inliningTest3", null, new Object[] {});
         if (res == 7)
@@ -2307,7 +2343,7 @@ public class Runner {
         return k = 7;
     }
 
-    public static void testInlining4() throws Exception {
+    public @Test void testInlining4() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inliningTest4", null, new Object[] {});
         if (res == 6666667)
@@ -2409,7 +2445,7 @@ public class Runner {
         inliningTest4Var += sum;
     }
 
-    public static void testInlining5() throws Exception {
+    public @Test void testInlining5() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inliningTest5", null, new Object[] {});
         if (res == 4)
@@ -2445,7 +2481,7 @@ public class Runner {
         return (b3 << 24) | (b2 << 16) | (b1 << 8) | b0;
     }
 
-    public static void testInlining6() throws Exception {
+    public @Test void testInlining6() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inliningTest6", null, new Object[] {});
         if (res == 63)
@@ -2478,7 +2514,7 @@ public class Runner {
             return 1;
     }
 
-    public static void testInlining7() throws Exception {
+    public @Test void testInlining7() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inliningTest7", null, new Object[] {});
         if (res == inliningTest7())
@@ -2510,7 +2546,7 @@ public class Runner {
         int applyAsInt(int i);
     }
 
-    public static void testInlining8() throws Exception {
+    public @Test void testInlining8() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inliningTest8", null, new Object[] {});
         if (res == inliningTest8())
@@ -2524,7 +2560,7 @@ public class Runner {
         return op.applyAsInt(7);
     }
 
-    public static void testInlining9() throws Exception {
+    public @Test void testInlining9() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inliningTest9", null, new Object[] {});
         if (res == inliningTest9())
@@ -2546,7 +2582,7 @@ public class Runner {
         return new Inline9();
     }
 
-    public static void testInlining10() throws Exception {
+    public @Test void testInlining10() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inliningTest10", null, new Object[] { 3 });
         if (res == inliningTest10(3))
@@ -2575,7 +2611,7 @@ public class Runner {
         return obj.value + obj.value2 * 100;
     }
 
-    public static void testForLoop() throws Exception {
+    public @Test void testForLoop() throws Exception {
         StdDriver2 d = new StdDriver2();
         String[] args = { "one", "two", "three" }; 
         int res = (int)d.invoke(Runner.class, "forLoopTest", null, new Object[] { args }); 
@@ -2599,7 +2635,7 @@ public class Runner {
         return sum;
     }
 
-    public static void testSimpleNew() throws Exception {
+    public @Test void testSimpleNew() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "simpleNewTest", null, new Object[0]);
         if (res == 7)
@@ -2616,7 +2652,7 @@ public class Runner {
         return 7;
     }
 
-    public static void testInlineImmutable() throws Exception {
+    public @Test void testInlineImmutable() throws Exception {
         //javassist.offload.Settings.Options.doInline = false;
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inlineImmutableTest", null, new Object[] { new InlineImmKC() }); 
@@ -2676,7 +2712,7 @@ public class Runner {
         return r;
     }
    
-    public static void testInlineImmutable2() throws Exception {
+    public @Test void testInlineImmutable2() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "inlineImmutableTest2", null, new Object[0]);
         if (res == 787)
@@ -2711,7 +2747,7 @@ public class Runner {
         return new ImmutableTest2();
     }
 
-    public static void testMPIRuntime() throws Exception {
+    public @Test void testMPIRuntime() throws Exception {
         final int N = 3;
         MPIRuntime.start(N, new MpiRunTest1(N));
     }
@@ -2809,7 +2845,7 @@ public class Runner {
         MpiRunC[] oarray;
     }
 
-    public static void testMPIRuntime2() throws Exception {
+    public @Test void testMPIRuntime2() throws Exception {
         MpiRunC2 c2 = new MpiRunC2();
         c2.value = 7;
         c2.s = "foo";
@@ -2841,7 +2877,7 @@ public class Runner {
             throw new Exception("testMPIRuntime2");
     }
 
-    public static void testMallocFree() throws Exception {
+    public @Test void testMallocFree() throws Exception {
         StdDriver2 d = new StdDriver2();
         int res = (int)d.invoke(Runner.class, "mallocFreeTest", null, new Object[] { 3 }); 
         if (res == 4)
@@ -2849,7 +2885,9 @@ public class Runner {
         else
             throw new Exception("mallocFree " + res);
 
-        d.doGarbageCollection();
+        if (useGC)
+            d.doGarbageCollection();
+
         res = (int)d.invoke(Runner.class, "mallocFreeTest", null, new Object[] { 3 }); 
         if (res == 4)
             System.out.println("mallocFree 2 OK");
@@ -2879,7 +2917,7 @@ public class Runner {
         @Final public static DeadcodeFoo value;
     }
 
-    public static void testDeadcode() throws Exception {
+    public @Test void testDeadcode() throws Exception {
         DeadcodeFoo foo = new DeadcodeFoo();
         foo.next = null;
         StdDriver2 d = new StdDriver2();
@@ -2926,7 +2964,7 @@ public class Runner {
         @Final public static boolean svalue;
     }
 
-    public static void testDeadcode2() throws Exception {
+    public @Test void testDeadcode2() throws Exception {
         DeadcodeFoo2 foo = new DeadcodeFoo2();
         foo.next = new DeadcodeFoo2();
         StdDriver2 d = new StdDriver2();
@@ -3018,7 +3056,7 @@ public class Runner {
         }
     }
 
-    public static void testDeadcode3() throws Exception {
+    public @Test void testDeadcode3() throws Exception {
         DeadcodeVec a = new DeadcodeVec(1, 20);
         DeadcodeVec b = new DeadcodeVec(3, 40);
         DeadcodeVec c = new DeadcodeVec(5, 30);
@@ -3070,7 +3108,7 @@ public class Runner {
         }
     }
 
-    public static void testDeadcode4() throws Exception {
+    public @Test void testDeadcode4() throws Exception {
         DeadcodeVec2 a = new DeadcodeVec2(1, 20);
         DeadcodeVec2 b = new DeadcodeVec2(3, 40);
         DeadcodeVec2 c = new DeadcodeVec2(5, 30);
@@ -3105,7 +3143,7 @@ public class Runner {
         final CastTestFunc f = new CastTestFunc2(); 
     }
 
-    public static void testCast() throws Exception {
+    public @Test void testCast() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int res = (int)drv.invoke(Runner.class, "castTest", null, new Object[] { new CastTestBody() });
         if (res == 1)
@@ -3122,7 +3160,7 @@ public class Runner {
         return f.apply();
     }
 
-    public static void testLambda() throws Exception {
+    public @Test void testLambda() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int debug = Options.debug;
         //Settings.Options.debug = 2;
@@ -3156,7 +3194,7 @@ public class Runner {
         return i -> (int)d + i;
     }
 
-    public static void testLambda2() throws Exception {
+    public @Test void testLambda2() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int debug = Options.debug;
         //Settings.Options.debug = 2;
@@ -3182,7 +3220,7 @@ public class Runner {
         return f.apply(1, 2);
     }
 
-    public static void testLambda3() throws Exception {
+    public @Test void testLambda3() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int debug = Options.debug;
         //Settings.Options.debug = 2;
@@ -3212,7 +3250,7 @@ public class Runner {
         return f.apply(1, 2);
     }
 
-    public static void testObjectInlining() throws Exception {
+    public @Test void testObjectInlining() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int res = (int)drv.invoke(Runner.class, "objectInlineTest", null, new Object[] { new InlinedObj() });
         if (res == 73 * 3)
@@ -3240,7 +3278,7 @@ public class Runner {
         return obj.value;
     }
 
-    public static void testObjectInliningB() throws Exception {
+    public @Test void testObjectInliningB() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int res = (int)drv.invoke(Runner.class, "objectInlineTestB", null,
                             new Object[] { new InlinedObj(), new Object(), new InlinedObj() });
@@ -3273,7 +3311,7 @@ public class Runner {
         return obj.value;
     }
 
-    public static void testObjectInliningC() throws Exception {
+    public @Test void testObjectInliningC() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int res = (int)drv.invoke(Runner.class, "objectInlineTestC", null,
                             new Object[] { new InlinedObj(), new Object(), new InlinedObj() });
@@ -3327,7 +3365,7 @@ public class Runner {
         float value2(InlineObjDArray2 a) { return a.farray.get(x, 0); }
     }
 
-    public static void testObjectInliningD() throws Exception {
+    public @Test void testObjectInliningD() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int res = (int)drv.invoke(Runner.class, "objectInlineTestD", null,
                             new Object[] { new InlineObjDArray2() });
@@ -3349,7 +3387,7 @@ public class Runner {
         return r;
     }
 
-    public static void testIntfType() throws Exception {
+    public @Test void testIntfType() throws Exception {
         StdDriver2 drv = new StdDriver2();
         try {
             drv.invoke(Runner.class, "interfaceTypeTest", null,
@@ -3384,7 +3422,7 @@ public class Runner {
             return 3;
     }
 
-    public static void testReifier() throws Exception {
+    public @Test void testReifier() throws Exception {
         ClassPool cp = ClassPool.getDefault();
         CtClass cc = cp.get(Runner.class.getName());
         CtMethod cm = cc.getDeclaredMethod("objectInlineTestD");
@@ -3394,7 +3432,7 @@ public class Runner {
         System.out.println(ast.function);
     }
 
-    public static void testFinal() throws Exception {
+    public @Test void testFinal() throws Exception {
         StdDriver2 drv = new StdDriver2();
         FinalTest ft = new FinalTest();
         FinalTest ft2 = new FinalTest();
@@ -3444,7 +3482,7 @@ public class Runner {
         return ft.value + ft.ft.value;
     }
 
-    public static void testFinalInline() throws Exception {
+    public @Test void testFinalInline() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int res = (int)drv.invoke(Runner.class, "finalInline", null,
                             new Object[0]);
