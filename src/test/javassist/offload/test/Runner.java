@@ -48,6 +48,7 @@ import javassist.offload.lib.FloatArray3D;
 import javassist.offload.lib.FloatArray4D;
 import javassist.offload.lib.FloatArray;
 import javassist.offload.lib.ForeignClass;
+import javassist.offload.lib.IntArray;
 import javassist.offload.lib.Jvm;
 import javassist.offload.lib.MPI;
 import javassist.offload.lib.MPIRuntime;
@@ -123,6 +124,7 @@ public class Runner {
         testF3Array();
         testFloat2Array();
         testDouble2Array();
+        testIntArray();
         testFinalAnno();
         testIntrinsic();
         testIntrinsicLoop();
@@ -1914,6 +1916,22 @@ public class Runner {
         @Inline public double value(DoubleArray fa) {
             return fa.get(i);
         }
+    }
+
+    public @Test void testIntArray() throws Exception {
+        StdDriver2 drv = new StdDriver2();
+        IntArray ia1 = new IntArray(8, true);
+        int res = (int)drv.invoke(Runner.class, "intArrayTest", null,
+                            new Object[] { ia1 });
+        if (res == 90)
+            System.out.println("testIntArray OK");
+        else
+            throw new Exception("testIntArray " + res);
+    }
+
+    public static int intArrayTest(IntArray ia1) {
+        ia1.set(2, 90);
+        return ia1.get(2);
     }
 
     public @Test void testFinalAnno() throws Exception {
