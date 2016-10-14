@@ -100,7 +100,7 @@ public class CTranslator {
             }
         }
         catch (RuntimeException e) { throw e; }
-        catch (Exception e) { throw new DriverException("translation failed", e); }
+        catch (Exception e) { throw new DriverException("translation failed. " + e.getMessage(), e); }
     }
 
     /**
@@ -235,7 +235,7 @@ public class CTranslator {
         EnvSnapshot prog = new EnvSnapshot();
         prog.classTable = gen.classTable();
         prog.funcTable = new FunctionTable<TraitCFunction,CDispatcher>();
-        tracer.setHeapMemory(gen.heapMemory());
+        tracer.setup(gen);
         Reifier driver = new Reifier(cm, args, tracer, prog.classTable,
                                      prog.funcTable, CFunctionMetaclass.class) {
             @Override

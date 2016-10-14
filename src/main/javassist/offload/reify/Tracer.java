@@ -109,7 +109,7 @@ public class Tracer {
     }
 
     /**
-     * Translates the given function and all the functions
+     * Collects the given function and all the functions
      * directly/indirectly called from that function.
      *
      * @param call      the expression calling the function.

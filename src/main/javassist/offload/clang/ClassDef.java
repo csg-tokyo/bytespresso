@@ -23,6 +23,7 @@ import javassist.offload.ast.ObjectConstant;
 import javassist.offload.ast.PutField;
 import javassist.offload.ast.AdhocAST;
 import javassist.offload.ast.VisitorException;
+import javassist.offload.javatoc.impl.CTracer;
 import javassist.offload.javatoc.impl.JavaObjectToC;
 import javassist.offload.reify.Tracer;
 
@@ -324,14 +325,18 @@ public class ClassDef extends CTypeDef {
 
     public void invokeMethod(CodeGen gen, Call expr) throws VisitorException {
         Callable f = expr.calledFunction();
+        String name = expr.methodName();
         if (f == null) {
-            if (expr.methodName().equals("getClass") && expr.isStatement() instanceof Block) {
-                // Since getClass() is a native method, f will be null.
-                // Ignore Object#getClass() if its return value is discarded
+            if (expr.isStatement() instanceof Block
+                && ("getClass".equals(name)
+                    || (CTracer.requireNonNull.equals(name))
+                       && CTracer.javaUtilObjectsName.equals(expr.targetType().getName()))) {
+                // this call is for null-pointer checking synthesized by javac.
+                // So we ignore the call.  See CTracer#isMacro().
             }
             else
                 throw new VisitorException("not found the body of " + expr.targetType().getName()
-                                            + "." + expr.methodName());
+                                            + "." + name);
         }
         else
             ((CallableCode)f).callerCode(gen, expr);

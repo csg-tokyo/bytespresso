@@ -16,7 +16,9 @@ import javassist.offload.ast.Function;
 import javassist.offload.ast.FunctionMetaclass;
 import javassist.offload.ast.JMethod;
 import javassist.offload.ast.TypeDef;
+import javassist.offload.ast.VisitorException;
 import javassist.offload.clang.CFunctionMetaclass;
+import javassist.offload.clang.CodeGen;
 import javassist.offload.clang.HeapMemory;
 import javassist.offload.clang.IntrinsicCFunction;
 import javassist.offload.reify.FunctionTable;
@@ -29,10 +31,16 @@ import javassist.offload.reify.Tracer;
  */
 public class CTracer extends Tracer {
     private HeapMemory heap;    // may be null.
+    private CtClass javaUtilObjects = null;
+    public static final String requireNonNull = "requireNonNull";
+    public static final String javaUtilObjectsName = java.util.Objects.class.getName();
 
     public CTracer() { heap = null; }
 
-    public void setHeapMemory(HeapMemory h) { heap = h; }
+    public void setup(CodeGen gen) throws VisitorException {
+        heap = gen.heapMemory();
+        javaUtilObjects = gen.getCtClass(java.util.Objects.class);
+    }
 
     public boolean isMacro(Call expr, TraceContext context)
         throws NotFoundException
@@ -40,6 +48,14 @@ public class CTracer extends Tracer {
         CtClass t = expr.actualTargetType();
         if (t == null)
             t = expr.targetType();
+
+        // Java 9 javac uses java.util.Objects.requireNonNull() for null-pointer checking.
+        // So we should remove requireNonNull() from the constructed AST.
+        //
+        // See javassist.offload.clang.ClassDef#invokeMethod().
+        // Also see https://bugs.openjdk.java.net/browse/JDK-8074306
+        if (t == javaUtilObjects && requireNonNull.equals(expr.methodName()))
+            return true;
 
         TypeDef def = context.classTable().addClass(t);
         return def.isMacro(expr);
