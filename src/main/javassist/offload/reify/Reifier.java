@@ -206,8 +206,13 @@ public class Reifier {
         do {
             numOfTypes = ct.instantiatedTypes();
             Collection<? extends TypeDef> col = ct.allTypes();
-            for (TypeDef def: col)
-                tracer.revisitDispatchers(def, context);
+            try {
+                for (TypeDef def: col)
+                    tracer.revisitDispatchers(def, context);
+            }
+            catch (java.util.ConcurrentModificationException e) {
+                numOfTypes--;
+            }
         } while (numOfTypes < ct.instantiatedTypes());
     }
 
