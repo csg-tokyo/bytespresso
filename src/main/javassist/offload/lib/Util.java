@@ -154,11 +154,27 @@ public class Util {
     }
 
     /**
+     * Power.
+     */
+    @Foreign
+    public static double pow(double a, double b) {
+        return Math.pow(a, b);
+    }
+
+    /**
      * Square root.
      */
     @Foreign
     public static float sqrtf(float f) {
         return (float)Math.sqrt(f);
+    }
+
+    /**
+     * Square root.
+     */
+    @Foreign
+    public static double sqrt(double d) {
+        return (double)Math.sqrt(d);
     }
 
     /**

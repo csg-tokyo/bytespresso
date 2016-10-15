@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 import java.util.function.IntFunction;
 
 import org.junit.Test;
+import static org.junit.Assert.*;
 
 import javassist.ClassPool;
 import javassist.CtBehavior;
@@ -342,6 +343,20 @@ public class Runner {
         Jvm.writeLong(j);
         Jvm.writeLong(j2);
         Jvm.writeShort(s);
+    }
+
+    @Test public void testUtil() throws Exception {
+        StdDriver2 drv = new StdDriver2();
+        final int i = 3;
+        final double d = 13.0;
+        double res = (double)drv.invoke(Runner.class, "utilTest", null,
+                                  new Object[] { i, d });
+        double expected = utilTest(i, d);
+        assertEquals(expected, res, expected * 0.01);
+    }
+
+    public static double utilTest(int i, double d) {
+        return Util.pow(d, i) + Util.exp(d) + Util.sqrt(d);
     }
 
     public @Test void arrayTest() throws Exception {
