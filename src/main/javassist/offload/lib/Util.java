@@ -154,6 +154,66 @@ public class Util {
     }
 
     /**
+     * Printer.
+     */
+    public static final Printer printer = new Printer();
+
+    /**
+     * Printer.
+     */
+    static public class Printer {
+        /**
+         * Prints a character.
+         */
+        public Printer p(char c) { print(c); return this; }
+
+        /**
+         * Prints an integer.
+         */
+        public Printer p(int i) { print(i); return this; }
+
+        /**
+         * Prints an integer.
+         */
+        public Printer p(long i) { print(i); return this; }
+
+        /**
+         * Prints a value.
+         */
+        public Printer p(float f) { print(f); return this; }
+
+        /**
+         * Prints a value.
+         */
+        public Printer p(double d) { print(d); return this; }
+
+        /**
+         * Prints a value in the style E.
+         */
+        public Printer e(float f) { printE(f); return this; }
+
+        /**
+         * Prints a value in the style E.
+         */
+        public Printer e(double d) { printE(d); return this; }
+
+        /**
+         * Prints a string character.
+         */
+        public Printer p(String s) { print(s); return this; }
+
+        /**
+         * Prints a white space.
+         */
+        public Printer s() { print(' '); return this; }
+
+        /**
+         * Prints a line terminator.
+         */
+        public Printer ln() { println(); return this; }
+    }
+
+    /**
      * Absolute value.
      */
     @Foreign

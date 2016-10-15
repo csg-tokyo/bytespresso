@@ -356,6 +356,7 @@ public class Runner {
     }
 
     public static double utilTest(int i, double d) {
+        Util.printer.p(i).p(',').p(31L).p(" ").p(0.3f).ln().p(d).s().e(0.3f).s().e(d).ln();
         return Util.pow(d, i) + Util.exp(d) + Util.sqrt(d) + Util.fabs(-0.3 * d);
     }
 
