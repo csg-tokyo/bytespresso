@@ -356,7 +356,7 @@ public class Runner {
     }
 
     public static double utilTest(int i, double d) {
-        return Util.pow(d, i) + Util.exp(d) + Util.sqrt(d);
+        return Util.pow(d, i) + Util.exp(d) + Util.sqrt(d) + Util.fabs(-0.3 * d);
     }
 
     public @Test void arrayTest() throws Exception {

@@ -65,7 +65,7 @@ public class DoubleArray implements Cloneable {
      * if the memory is not allocated at the Java side. 
      */
     public void setAll(double v) {
-        for(int i=0; i < size; i++)
+        for(int i = 0; i < size; i++)
             set(i, v);    
     }
 

@@ -154,6 +154,14 @@ public class Util {
     }
 
     /**
+     * Absolute value.
+     */
+    @Foreign
+    public static double fabs(double d) {
+        return Math.abs(d);
+    }
+
+    /**
      * Power.
      */
     @Foreign
