@@ -529,8 +529,7 @@ public class MPI {
             + "MPI_Allreduce(src, dest, 1, MPI_DOUBLE, (MPI_Op)v2, MPI_COMM_WORLD);\n"
             + "return dest[0];")
     public static double allReduce(double local, MPI.Op op) {
-        error();
-        return 0.0;
+        return MPIRuntime.reduce(local, op);
     }
 
     /**

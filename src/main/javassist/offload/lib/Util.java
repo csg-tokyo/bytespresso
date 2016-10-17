@@ -161,7 +161,7 @@ public class Util {
     /**
      * Printer.
      */
-    static public class Printer {
+    public static final class Printer {
         /**
          * Prints a character.
          */

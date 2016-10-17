@@ -2817,11 +2817,12 @@ public class Runner {
                 System.out.println(rank);
                 float rf = MPI.allReduce(1f, MPI.sum());
                 int ri = MPI.allReduce(10, MPI.sum());
+                double rd = MPI.allReduce(10.0, MPI.sum());
                 MPI.barrier();
                 System.out.println(".." + rank);
 
-                if (rf != 3f || ri != 30)
-                    throw new RuntimeException("testMPIRuntime reduction: " + rf + " " + ri);
+                if (rf != 3f || ri != 30 || rd != 30.0)
+                    throw new RuntimeException("testMPIRuntime reduction: " + rf + " " + ri + " " + rd);
 
                 float sum = 0;
                 for (float e: a)
@@ -2861,8 +2862,9 @@ public class Runner {
                 System.out.println(rank);
                 float fsum = MPI.allReduce(1f, MPI.sum());
                 int isum = MPI.allReduce(10, MPI.sum());
+                double dsum = MPI.allReduce(10.0, MPI.sum());
                 MPI.barrier();
-                System.out.println(".." + rank + " " + fsum + " " + isum);
+                System.out.println(".." + rank + " " + fsum + " " + isum + " " + dsum);
             }
         }
     }

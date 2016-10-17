@@ -340,6 +340,37 @@ public class MPIRuntime {
             throw new RuntimeException("bad reducation");
     }
 
+    static double reduce(double f, MPI.Op op) {
+        Node n = thisNode();
+        n.doubleValue = f;
+        doAwait(n.barrier);
+        if (op == MPI.sumOp) {
+            double sum = 0;
+            for (int i = 0; i < n.all.length; i++)
+                sum += n.all[i].doubleValue;
+
+            return sum;
+        }
+        else if (op == MPI.maxOp) {
+            double max = n.all[0].doubleValue;
+            for (int i = 1; i < n.all.length; i++)
+                if (n.all[i].doubleValue > max)
+                    max = n.all[i].doubleValue;
+
+            return max;
+        }
+        else if (op == MPI.minOp) {
+            double min = n.all[0].doubleValue;
+            for (int i = 1; i < n.all.length; i++)
+                if (n.all[i].doubleValue < min)
+                    min = n.all[i].doubleValue;
+
+            return min;
+        }
+        else
+            throw new RuntimeException("bad reducation");
+    }
+
     static void barrier() {
         doAwait(thisNode().barrier);
     }
