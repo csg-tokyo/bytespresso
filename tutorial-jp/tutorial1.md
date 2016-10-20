@@ -41,7 +41,7 @@ $ java -Djdk.internal.lambda.dumpProxyClasses=. HelloWorld
 Hello, World!
 ```
 
-無事に `Hello, World!`が出力されました。
+無事に `Hello, World!`が出力されました。普通に JVM の内部で全ての動作が完結しているようにも見えますが、invoke メソッドの引数で渡された lamba 式は C コードに変換、コンパイルされて JVM 外で実行されています。JVM から native な CPU へ実行がオフロードされたのです。
 
 ###生成される中間ファイル
 
