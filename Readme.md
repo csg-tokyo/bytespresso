@@ -392,6 +392,18 @@ when no `@Metaclass` is attached to the method.
 
 To be written.
 
+### Publications
+
+Shigeru Chiba, YungYu Zhuang, Maximilian Scherr, "Deeply Reifying
+Running Code for Constructing a Domain-Specific Language",
+Proc. of the 13th International Conference on Principles and Practices
+of Programming on the Java Platform: Virtual Machines, Languages,
+and Tools (PPPJ'16), Article No. 1, August 2016.
+
+Shigeru Chiba, YungYu Zhuang, Maximilian Scherr, "A Design of Deep Reification",
+MASS 2016 - Workshop on Modularity Across the System Stack, MODULARITY Companion'16,
+pp.168-171, March, 2016.
+
 ### Copyright notices
 
 Copyright (C) 2016- by Shigeru Chiba, All rights reserved.
