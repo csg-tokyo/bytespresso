@@ -135,6 +135,59 @@ public class MPIRuntime {
         }
     }
 
+    static class DoubleReceiver extends Receiver {
+        double[] array;
+        int offset;
+        int length;
+        int source;
+        Node destination;
+        int tag;
+
+        DoubleReceiver(double[] array, int offset, int length, int src, Node dest, int tag) {
+            this.array = array;
+            this.offset = offset;
+            this.length = length;
+            this.source = src;
+            this.destination = dest;
+            this.tag = tag;
+        }
+
+        void read() {
+            try {
+                read0();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private void read0() throws InterruptedException {
+            if (length <= 0)
+                return;
+
+            while (true) {
+                Packet p = destination.take(source, tag);
+                if (!(p.array instanceof double[]))
+                    throw new RuntimeException("the received data is not double");
+
+                double[] src = (double[])p.array;
+                int i = p.offset;
+                while (i < src.length && length > 0) {
+                    array[offset++] = src[i++];
+                    length--;
+                }
+
+                if (length <= 0) {
+                    if (i < src.length) {
+                        p.offset = i;
+                        destination.undo(source, p);
+                    }
+
+                    return;
+                }
+            }
+        }
+    }
+
     static class Node {
         int rank = -1;
         Node[] all;
@@ -235,6 +288,11 @@ public class MPIRuntime {
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    static DoubleReceiver receive(double[] array, int offset, int length, int src, int tag) {
+        Node dest = thisNode();
+        return new DoubleReceiver(array, offset, length, src, dest, tag);
     }
 
     static FloatReceiver receive(float[] array, int offset, int length, int src, int tag) {

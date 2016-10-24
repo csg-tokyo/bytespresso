@@ -7,12 +7,23 @@ import javassist.offload.Native;
 import javassist.offload.clang.NativeArrayClass;
 import javassist.offload.clang.NativeClass;
 
+/**
+ * Message Passing Interface.
+ *
+ * <p><code>MPI_Init()</code> and <code>MPI_Finalize()</code> are
+ * called by {@link MPIDriver}.   User programs do not have to
+ * explicitly call them.  If necessary, call {@link #abort()}
+ * (<code>MPI_Abort</code>).
+ * </p>
+ *
+ * @see MPIDriver
+ */
 public class MPI {
     /**
      * <code>MPI_Request</code>.
      */
     @Metaclass(type=NativeClass.class, arg = "sizeof(MPI_Request)")
-    public static final class Request {
+    public static final class Request implements Cloneable {
         private int flag;
         MPIRuntime.Receiver receiver;
 
@@ -78,7 +89,7 @@ public class MPI {
      * <code>MPI_Request</code> array.
      */
     @Metaclass(type=NativeArrayClass.class, arg = "sizeof(MPI_Request)")
-    public static class RequestArray {
+    public static class RequestArray implements Cloneable {
         int length;
 
         /**
@@ -203,6 +214,7 @@ public class MPI {
 
     /**
      * <code>MPI_Isend()</code> function.
+     * <code>reqs.get(index)</code> is used as an <code>MPI_Request</code> object.
      *
      * @param buf           a C pointer to the data sent.  
      */
@@ -249,6 +261,7 @@ public class MPI {
 
     /**
      * <code>MPI_Irecv()</code> function.
+     * <code>reqs.get(index)</code> is used as an <code>MPI_Request</code> object.
      *
      * @param buf       a C pointer to the float array where the received data are stored.
      */
@@ -279,8 +292,46 @@ public class MPI {
     }
 
     @Native("MPI_Isend(v1 + v2, v3, MPI_DOUBLE, v4, v5, MPI_COMM_WORLD, (MPI_Request*)v6);")
-    private static void send2(double[] buf, int offset, int length, int dest, int tag, Request req) {
-        error();
+    private static void send2(@NativePtr double[] buf, int offset, int length, int dest, int tag,
+                              @NativePtr Request req) {
+        double[] data = new double[length];
+        for (int i = 0; i < length; i++)
+            data[i] = buf[offset + i];
+
+        MPIRuntime.send(data, dest, tag);
+        req.isSend();
+    }
+
+    /**
+     * <code>MPI_Send()</code> function.
+     */
+    public static void send(double[] buf, int offset, int length, int dest, int tag) {
+        sendC(Unsafe.toCArray(buf), offset, length, dest, tag);
+    }
+
+    /**
+     * <code>MPI_Send()</code> function.
+     *
+     * @param buf       a C pointer to send buffer.
+     */
+    @Native("MPI_Send(v1 + v2, v3, MPI_DOUBLE, v4, v5, MPI_COMM_WORLD);")
+    public static void sendC(@NativePtr double[] buf, int offset, int length, int dest, int tag) {
+        double[] data = new double[length];
+        for (int i = 0; i < length; i++)
+            data[i] = buf[offset + i];
+
+        MPIRuntime.send(data, dest, tag);
+    }
+
+    /**
+     * <code>MPI_Send()</code> function.
+     *
+     * @param value     the value sent by <code>MPI_Send()</code>.
+     */
+    @Native("MPI_Send(&v1, 1, MPI_DOUBLE, v2, v3, MPI_COMM_WORLD);")
+    public static void send(double value, int dest, int tag) {
+        double[] data = { value };
+        MPIRuntime.send(data, dest, tag);
     }
 
     /**
@@ -299,9 +350,21 @@ public class MPI {
         receive2(Unsafe.toCArray(buf), offset, length, src, tag, Unsafe.toNativeBody(req));
     }
 
+    /**
+     * <code>MPI_Irecv()</code> function.
+     *
+     * @param buf   a C pointer to receive buffer.
+     */
+    public static void iRecvC(@NativePtr double[] buf, int offset, int length,
+                              int src, int tag, Request req) {
+        req.use();
+        receive2(buf, offset, length, src, tag, Unsafe.toNativeBody(req));
+    }
+
     @Native("MPI_Irecv(v1 + v2, v3, MPI_DOUBLE, v4, v5, MPI_COMM_WORLD, (MPI_Request*)v6);")
-    private static void receive2(@NativePtr double[] buf, int offset, int length, int src, int tag, Request req) {
-        error();
+    private static void receive2(@NativePtr double[] buf, int offset, int length, int src,
+                                 int tag, @NativePtr Request req) {
+        req.isReceive(MPIRuntime.receive(buf, offset, length, src, tag));
     }
 
     /**
