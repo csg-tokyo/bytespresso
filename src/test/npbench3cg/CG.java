@@ -286,7 +286,9 @@ public class CG implements Cloneable {
         x.set(1.0);
         zeta = 0.0;
 
-        MPI.barrier();
+        if (dsl.useMPI)
+            MPI.barrier();
+
         long time1 = Util.time();
         // ---------------------------------------------------------------------
         // Main Iteration for inverse power method
@@ -305,6 +307,13 @@ public class CG implements Cloneable {
 
             zeta = shift + 1.0 / tnorm1;
 
+            if (dsl.rank() == 0) {
+                if (it == 1)
+                    Util.printer.p("iteration\t||r||\t zeta").ln();
+
+                Util.printer.p(it).s().p(rnorm).s().p(zeta).ln();
+            }
+
             // ---------------------------------------------------------------------
             // Normalize z to obtain x
             // ---------------------------------------------------------------------
@@ -319,8 +328,9 @@ public class CG implements Cloneable {
         // ---------------------------------------------------------------------
 
         double time = (time2 - time1) / 1000000.0;
-        if (dsl.processes() > 1)
-            time = MPI.allReduce(time, MPI.max());
+        if (dsl.useMPI)
+            if (dsl.processes() > 1)
+                time = MPI.allReduce(time, MPI.max());
 
         if (dsl.rank() == 0) {
             int verified = verify(zeta, zeta_verify_value, dataClass);

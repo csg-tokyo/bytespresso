@@ -22,7 +22,10 @@ public class Vector implements Cloneable {
         dsl = d;
         elements = new DoubleArray(size, !Dsl.java);
         buffer = new double[1];
-        request = new MPI.Request();
+        if (d.useMPI)
+            request = new MPI.Request();
+        else
+            request = null;
     }
 
     @Inline public void set(Vector v) {
@@ -54,12 +57,13 @@ public class Vector implements Cloneable {
         for (int j = 1; j <= a.dsl.lastcol - a.dsl.firstcol + 1; j++)
             sum += a.elements.get(j) * b.elements.get(j);
 
-        for (int i = 1; i <= a.dsl.log2npcols; i++) {
-            MPI.iRecv(a.buffer, 1, a.dsl.reduceExchProc[i], i, a.request);
-            MPI.send(sum, a.dsl.reduceExchProc[i], i);
-            MPI.wait(a.request);
-            sum += a.buffer[0];
-        }
+        if (a.dsl.useMPI)
+            for (int i = 1; i <= a.dsl.log2npcols; i++) {
+                MPI.iRecv(a.buffer, 1, a.dsl.reduceExchProc[i], i, a.request);
+                MPI.send(sum, a.dsl.reduceExchProc[i], i);
+                MPI.wait(a.request);
+                sum += a.buffer[0];
+            }
 
         return sum;
     }
@@ -71,12 +75,13 @@ public class Vector implements Cloneable {
             sum += e * e;
         }
 
-        for (int i = 1; i <= dsl.log2npcols; i++) {
-            MPI.iRecv(buffer, 1, dsl.reduceExchProc[i], i, request);
-            MPI.send(sum, dsl.reduceExchProc[i], i);
-            MPI.wait(request);
-            sum += buffer[0];
-        }
+        if (dsl.useMPI)
+            for (int i = 1; i <= dsl.log2npcols; i++) {
+                MPI.iRecv(buffer, 1, dsl.reduceExchProc[i], i, request);
+                MPI.send(sum, dsl.reduceExchProc[i], i);
+                MPI.wait(request);
+                sum += buffer[0];
+            }
 
         return sum;
     }

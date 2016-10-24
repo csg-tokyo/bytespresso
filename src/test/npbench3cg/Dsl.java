@@ -15,6 +15,7 @@ public class Dsl implements Cloneable {
     public final int size;
     public int numProcRows;
     private int rank;
+    final boolean useMPI;
 
     int numProcs;
     int firstrow, lastrow, firstcol, lastcol;
@@ -38,13 +39,17 @@ public class Dsl implements Cloneable {
      */
     public Dsl(int s, int nprows) {
         size = s;
-        if (nprows == 0)
+        if (nprows == 0) {
             numProcRows = numProcs = 1;
+            useMPI = false;
+        }
         else {
             numProcRows = nprows;
             numProcs = nprows * 2;
+            useMPI = true;
         }
 
+        rank = 0;
         firstrow = firstcol = 1;
         lastrow = lastcol = s;
     }
@@ -54,22 +59,21 @@ public class Dsl implements Cloneable {
     }
 
     public Matrix.Sparse sparseMatrix(int numElements) {
-        return new Matrix.Sparse(numElements, size + 2,
-                                 size / numProcRows + 3, this);
+        if (useMPI)
+            return new Matrix.SparseMPI(numElements, size + 2,
+                                        size / numProcRows + 3, this);
+        else
+            return new Matrix.Sparse(numElements, size + 2, this);
     }
 
     public void compile(Runnable r) throws DriverException {
         if (numProcs == 1) {
-            if (java) {
-                setupSubmatrixInfo(0);
+            if (java)
                 r.run();
-            }
             else {
-                System.out.println("cannot generate C code");
-                // new StdDriver().invoke(() -> {
-                //    setupSubmatrixInfo(0);
-                //    r.run();
-                // });
+                new javassist.offload.javatoc.StdDriver().invoke(() -> {
+                    r.run();
+                });
             }
         }
         else {

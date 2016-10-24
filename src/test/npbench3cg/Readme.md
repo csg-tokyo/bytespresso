@@ -25,3 +25,7 @@ is run with multiple Java threads and MPI emulation on the JVM.
 The number of emulated MPI processes is 2 * `np`.  For example,
 if `np=3` is given, 6 MPI processes are created.
  
+This program can be run without MPI.  Give `np=0` when running the
+program.  It runs with a single thread on either the JVM or a native
+CPU.
+ 

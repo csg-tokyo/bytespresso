@@ -13,21 +13,17 @@ public abstract class Matrix implements Cloneable {
         public final IntArray colidx;
         public final IntArray rowstr;
 
-        private final DoubleArray work;
-        private final MPI.Request request;
-
         /**
-         * 
+         * Constructs a sparse matrix.
+         *
          * @param size          the number of non-zero elements.
          * @param numOfRows     the number of rows.
          */
-        Sparse(int size, int numOfRows, int workSize, Dsl d) {
+        Sparse(int size, int numOfRows, Dsl d) {
             dsl = d;
             values = new DoubleArray(size, !Dsl.java);
             colidx = new IntArray(size, !Dsl.java);
             rowstr = new IntArray(numOfRows, !Dsl.java);
-            work = new DoubleArray(workSize, !Dsl.java);
-            request = new MPI.Request();
         }
 
         /**
@@ -39,6 +35,28 @@ public abstract class Matrix implements Cloneable {
                 for (int k = rowstr.get(j); k <= end; k++)
                     colidx.set(k, colidx.get(k) - offset);
             }
+        }
+
+        public void mult(Vector v, Vector result) {
+            for (int j = 1; j <= dsl.lastrow - dsl.firstrow + 1; j++) {
+                double sum = 0.0;
+                int end = rowstr.get(j + 1) - 1;
+                for (int k = rowstr.get(j); k <= end; k++)
+                    sum += values.get(k) * v.elements.get(colidx.get(k));
+
+                result.elements.set(j, sum);
+            }
+        }
+    }
+
+    public static class SparseMPI extends Sparse {
+        private final DoubleArray work;
+        private final MPI.Request request;
+
+        SparseMPI(int size, int numOfRows, int workSize, Dsl d) {
+            super(size, numOfRows, d);
+            work = new DoubleArray(workSize, !Dsl.java);
+            request = new MPI.Request();
         }
 
         public void mult(Vector v, Vector result) {
