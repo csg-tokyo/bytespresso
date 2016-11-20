@@ -22,7 +22,16 @@ The program first constructs several vectors and a matrix:
     x = dsl.vector();
     z = dsl.vector();
 
-`dsl` refers to an object representing a vector DSL (domain specific language). 
+`dsl` refers to an object representing a vector DSL (domain specific language).
+We call it *a language* but actually it is a library providing a language-like
+programming interface.  Since such a library is often categorized into an embedded
+(or library-based) DSL, we also call it a DSL.
+`mat` is a matrix object and `p`, `q`, ... are vector objects.  They are
+provided by the vector DSL library.  See `Matrix.java` and `Vector.java` for details.
+They represent a matrix or a vector on multiple MPI processes and support basic
+arithmetic methods.  They encapsulate all MPI communication necessary for computing
+these methods.
+
 Then the program translates the `run` method of a `Runner` object into a C program:
 
     cg.dsl.compile(new Runner(cg));
