@@ -11,6 +11,14 @@ for MPI environment.  Since vector and matrix objects provided by
 the library encapsulate data distribution and inter-node communication,
 the size of the main program `CG.java` is less than half of the original size in Fortran.
 
+The program is divided into two parts.  The first part is for preparation.
+It constructs matrix and vector objects in Java.  The latter part is offloaded
+to MPI with those Java objects together.  During runtime, it is dynamically
+translated into a C program using MPI, compiled, and executed.
+The most part of the benchmark program is included in the latter part.
+This two-stage execution enables execution performance comparable to the original
+Fortran program's.
+
 The program first constructs several vectors and a matrix:
 
     // CG(char, int)
@@ -36,10 +44,13 @@ Then the program translates the `run` method of a `Runner` object into a C progr
 
     cg.dsl.compile(new Runner(cg));
 
-It also translates `runBenchmark` method in `CG` as well since the `run` method calls it. 
-The matrix `mat` and the vectors `p`, `q`, and so on are also
-translated into C arrays.
-The translated program first executes the initialization of the matrix and vectors:
+It also translates `runBenchmark` method in `CG` as well since the `run` method calls it.
+The body of `runBenchmark`is the main routine of the CG benchmark.  It is a fairly direct
+mapping from the original Fortran program. 
+The matrix `mat` and the vectors `p`, `q`, and so on, which have been already constructed,
+are also translated into C arrays.
+
+The`runBenchmark` method first executes the initialization of the matrix and vectors:
 
     // runBenchMark()
     iv = new int[2 * (na + 1)];

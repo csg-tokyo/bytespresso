@@ -39,6 +39,8 @@ runs with MPI and the latter one runs with CUDA.  See `VecMpiDSL.java` and
 `VecCudaDSL.java`, which implement embedded DSLs for processing vectors.
 They launch compilers through `javassist.offload.lib.MPIDriver` and `CudaDriver`. 
 
+Under `src/test/npbench3cg`, a Bytespresso version of the CG program in the NAS Parallel
+benchmark suite is found.  For details, see `src/test/npbench3cg/Readme.md`. 
 
 ### How to translate and run a Java method
 
