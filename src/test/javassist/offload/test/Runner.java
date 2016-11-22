@@ -166,6 +166,7 @@ public class Runner {
         testLambda();
         testLambda2();
         testLambda3();
+        testLambda4();
         testObjectInlining();
         testObjectInliningB();
         testObjectInliningC();
@@ -3284,6 +3285,72 @@ public class Runner {
 
     @Inline public static float lambdaTest3(LambdaFuncF f) {
         return f.apply(1, 2);
+    }
+
+    public @Test void testLambda4() throws Exception {
+        StdDriver2 drv = new StdDriver2();
+        int debug = Options.debug;
+        Options.debug = 2;
+        int res = (int)drv.invoke(Runner.class, "lambdaTest4", null, new Object[] { 4 });
+        Options.debug = debug;
+        if (res == 8)
+            System.out.println("lambdaTest4 OK");
+        else
+            throw new Exception("lambdaTest4 " + res);
+    }
+
+    @Metaclass(type=ImmutableClass.class)
+    public interface LambdaFunc4 {
+        double apply(int a, double b, int[] c, String[] d, int[][] e, String[][] f, long[] g);
+    }
+
+    public static int lambdaTest4(int k) {
+        float j = k + 3;
+        LambdaFunc4 f4 = (a, b, c, d, e, f, g) -> {
+            float sum = j + a;
+            return sum;
+        };
+        return lambdaTest4b(f4);
+    }
+
+    public static int lambdaTest4b(LambdaFunc4 f) {
+        double a = lambdaTest4(f);
+        return (int)a;
+    }
+
+    @Inline public static double lambdaTest4(LambdaFunc4 f) {
+        return f.apply(1, 2.0, null, null, null, null, null);
+    }
+
+    public @Test void testLambda5() throws Exception {
+        StdDriver2 drv = new StdDriver2();
+        int debug = Options.debug;
+        Options.debug = 2;
+        int res = (int)drv.invoke(Runner.class, "lambdaTest5", null, new Object[] { 80 });
+        Options.debug = debug;
+        if (res == 80)
+            System.out.println("lambdaTest5 OK");
+        else
+            throw new Exception("lambdaTest5 " + res);
+    }
+
+    public static int lambdaTest5c(int i) { return i; }
+
+    @Metaclass(type=ImmutableClass.class)
+    public interface LambdaFunc5<T> {
+        T apply(T t);
+    }
+
+    public static int lambdaTest5(int k) {
+        LambdaFunc5<Integer> f5 = (t) -> {
+            return t;
+        };
+
+        return lambdaTest5b(f5, k);
+    }
+
+    public static <T> T lambdaTest5b(LambdaFunc5<T> f, T i) {
+        return f.apply(i);
     }
 
     public @Test void testObjectInlining() throws Exception {

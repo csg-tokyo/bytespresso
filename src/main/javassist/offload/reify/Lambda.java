@@ -175,24 +175,38 @@ public class Lambda {
         else if (kind == ConstPool.REF_invokeStatic)
             code.addInvokestatic(targetClass, targetMethod, targetDesc);
 
-        code.add(returnOpcode(desc));
+        int retOp = returnOpcode(desc);
+        if (retOp == Bytecode.RETURN) {
+            int targetRetOp = returnOpcode(targetDesc);
+            if (targetRetOp != Bytecode.RETURN)
+                if (targetRetOp == Bytecode.DRETURN || targetRetOp == Bytecode.LRETURN)
+                    code.add(Bytecode.POP2);
+                else
+                    code.add(Bytecode.POP);
+        }
+
+        code.add(retOp);
         minfo.setCodeAttribute(code.toCodeAttribute());
     }
 
     private static void loadParams(Bytecode code, String desc) {
         int param = 1;
         int i = 1;
-        boolean isArray = false;
         while (true) {
             char c = desc.charAt(i++);
             if (c == ')')
                 break;
-            else if (c == '[')
-                isArray = true;
-            else if (c == 'L' || isArray) {
+            else if (c == '[') {
+                code.addAload(param++);
+                do {
+                    c = desc.charAt(i++);
+                } while (c == '[');
+                if (c == 'L')
+                    i = desc.indexOf(';', i) + 1;
+            }
+            else if (c == 'L') {
                 code.addAload(param++);
                 i = desc.indexOf(';', i) + 1;
-                isArray = false;
             }
             else if (c == 'D') {
                 code.addDload(param);
