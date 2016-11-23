@@ -3290,7 +3290,7 @@ public class Runner {
     public @Test void testLambda4() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int debug = Options.debug;
-        Options.debug = 2;
+        //Options.debug = 2;
         int res = (int)drv.invoke(Runner.class, "lambdaTest4", null, new Object[] { 4 });
         Options.debug = debug;
         if (res == 8)
@@ -3325,7 +3325,7 @@ public class Runner {
     public @Test void testLambda5() throws Exception {
         StdDriver2 drv = new StdDriver2();
         int debug = Options.debug;
-        Options.debug = 2;
+        //Options.debug = 2;
         int res = (int)drv.invoke(Runner.class, "lambdaTest5", null, new Object[] { 80 });
         Options.debug = debug;
         if (res == 80)
@@ -3341,11 +3341,18 @@ public class Runner {
         T apply(T t);
     }
 
+    public static class LambdaTest5 {
+        LambdaTest5 foo(LambdaTest5 t) { return t; }
+    }
+
     public static int lambdaTest5(int k) {
         LambdaFunc5<Integer> f5 = (t) -> {
             return t;
         };
 
+        LambdaTest5 t5 = new LambdaTest5();
+        Consumer<LambdaTest5> c = t5::foo;
+        c.accept(null);
         return lambdaTest5b(f5, k);
     }
 
