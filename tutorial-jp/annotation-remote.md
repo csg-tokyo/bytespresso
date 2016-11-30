@@ -12,7 +12,7 @@ Bytespresso: Annotation @Remote
 --
 @Remoteアノテーションは、変換後のCコードからJavaコードを走らせるための仕組みである。Cに変換するJava Lambda式には記述上の制約が多い為、時には一部の処理については普通のJavaのコードで実行したいという要求がある。@Remoteは、JVMへのコールバックを実現するものである。
 
-コールバックするJVMは、StdDriverを利用している時は、ホストJavaプログラムを実行するJVMである。一方、MPIDriverを利用している場合は、MPI Processから起動されるノードローカルなJVMになる。
+コールバックするJVMは、StdDriverを利用している時は、ホストJavaプログラムを実行するJVMである。一方、MPIDriverを利用している場合は、各MPI Processから別途起動されるJVMで実行される。この場合、呼び出し元のJVMに処理を投げるわけではないため、「コールバック」という表現よりも「リモートメソッド呼び出し」という表現がより適切である。
 
 利用例
 --
@@ -56,7 +56,7 @@ public class AnnotationRemote {
 }
 ```
 
-実行結果は次のようになる
+実行結果は次のようになる。`getJvmPID()`メソッドはホストJavaプログラムを実行中のJVMで実行される。すなわち、hostプログラムを動かしているJVMと@RemoteでコールバックされるJVMが同じPIDで、変換されたCコードだけが別のPIDで実行される。
 
 ```
 PID of the host JVM: 58162
@@ -64,9 +64,7 @@ PID of Translated C 58166
 PID of @Remote JVM 58162
 ```
 
-hostプログラムを動かしているJVMと@RemoteでコールバックされるJVMが同じプロセスで、変換されたCコードだけが別のプロセスで実行される。
-
-上のプログラムをMPIDriverを利用するように変更したのが以下のプログラムである。
+先のサンプルプログラムをMPIDriverを利用するように変更したのが以下のプログラムである。
 
 ```Java
 package sample;
@@ -112,16 +110,17 @@ public class AnnotationRemoteMPI {
 }
 ```
 
-上記のコードの実行結果は以下のようになる
+上記のプログラムの実行結果は以下のようになる。MPIDriverでの実行の場合、`getJvmPID()`メソッドはMPIプロセスごとに起動されるJVMで実行される。そのため、PIDは全て違う結果となる。
+
 ```
-PID of the host JVM: 58189
-PID of Translated C 58205
-PID of Translated C 58206
-PID of @Remote JVM 
-PID of Translated C 58207
-PID of @Remote JVM 
-PID of Translated C 58208
-PID of @Remote JVM 
-PID of @Remote JVM 
+PID of the host JVM: 3694
+PID of Translated C 3710
+PID of Translated C 3712
+PID of Translated C 3713
+PID of Translated C 3711
+PID of @Remote JVM 3714
+PID of @Remote JVM 3717
+PID of @Remote JVM 3715
+PID of @Remote JVM 3716
 ```
 
