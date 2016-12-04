@@ -6,7 +6,6 @@ Bytespressoは、JavaのLambda式を実行中のJVMの外側で実行する仕�
 
 代表的なBytespresso DriverであるStdDriverを使うアプリケーションの実行フローを以下に示す。
 
-<!---
 ```sequence
 Application -> StdDriver : 1. Call 'invoke' with\nJava lambda
 StdDriver --> StdDriver : 2. Deep reification &\n Generate C Source
@@ -18,7 +17,7 @@ StdDriver --> a.out : 7. Return value of Remote call
 a.out -> StdDriver : 8. Return value from a.out
 StdDriver -> Application : 9. Return value of \nthe Java lambda
 ```
---->
+
 ![StdDriver Server Sequence](img/StdDriver-Server.png?raw=true)
 
 1. Java lambda式を引数にStdDriver.invokeを呼び出す。このlambda式の記述には以下の制限がある。
@@ -45,7 +44,6 @@ StdDriverの内部処理では、5のa.out実行の際に、javassist.offload.Se
 
 例えば、MPIDriverの場合、Serverオブジェクトは、a.outプロセスからforkされた別プロセスのJVMに作られる。
 
-<!---
 ```sequence
 Application -> MPIDriver : 1. Call 'invoke' with\nJava lambda
 MPIDriver --> MPIDriver : 2. Deep reification &\n Generate C Source
@@ -59,7 +57,6 @@ Server --> a.out : 9. Return value of Remote call
 a.out -> MPIDriver : 10. Return value from a.out
 MPIDriver -> Application : 11. Return value of \nthe Java lambda
 ```
---->
 
 ![MPIDriver Server Sequence](img/MPIDriver-Server.png?raw=true)
 
