@@ -21,9 +21,7 @@ public class HelloMPI {
         	for (int i = 0; i < procs; i++) {
         		MPI.barrier();
         		if (i == rank) {
-	        		Util.print("Hello ");
-	        		Util.print(MPI.commRank());
-	        		Util.println();
+	        		Util.printer.p("Hello ").p(MPI.commRank()).ln();
         		}
         	}
         });        

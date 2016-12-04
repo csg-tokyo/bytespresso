@@ -8,6 +8,8 @@ Bytespresso: Tutorial 1
 
 ### プログラムのコンパイルと実行
 
+"Bytespresso: Hands on" などを参考にBytespressoの開発環境が構築済みであることを前提とします。
+
 Bytespressoで"Hello, World!"プログラムは次のように書くことができます。このコードは、本来JVMが解釈するlambda式をC言語に変換し、コンパイルして実行するものです。変換とコンパイル、実行はBytespressoが提供するStdDriverオブジェクトのinvokeメソッドが行います。
 
 ```java:HelloWorld.java
@@ -17,8 +19,7 @@ import javassist.offload.lib.Util;
 public class HelloWorld {
     public static void main(String[] args) throws Exception {
     	new StdDriver().invoke(() -> {
-    		Util.print("Hello, World!");
-    		Util.println();
+    		Util.printer.p("Hello, World!").ln();
     	});    	
     }    
 }
@@ -34,18 +35,26 @@ $ ls
 HelloWorld.class	HelloWorld.java
 ```
 
-コンパイルに問題がなければ`HelloWorld.class`が吐き出されると思うので、これを実行します。
+コンパイル結果である`HelloWorld.class`を実行する際にはjdk.internal.lambda.dumpProxyClassesをオプションを設定する必要があります。このオプションで設定する「lambda式のProxyClassを吐き出す先」は、CLASSPATHが通っているディレクトリである必要があります。
 
 ```sh
 $ java -Djdk.internal.lambda.dumpProxyClasses=. HelloWorld
 Hello, World!
 ```
 
-無事に `Hello, World!`が出力されました。普通に JVM の内部で全ての動作が完結しているようにも見えますが、invoke メソッドの引数で渡された lamba 式は C コードに変換、コンパイルされて JVM 外で実行されています。JVM から native な CPU へ実行がオフロードされたのです。
+無事に `Hello, World!`が出力されました。invoke メソッドの引数で渡された lambda 式は、 C コードに変換、コンパイルされて JVM の外で実行されています。JVM から native な CPU へ処理が「オフロードされた」のです。
+
+一般的にJavaでは文字列の出力に`System.out.println`メソッドを使用しますが、変換対象のlambda式では`Util.printer.p`メソッド及び`Util.printer.ln`メソッドを使います。
+
+上記のサンプルプログラムは`src/test/sample/HelloWorld.java`としてBytespressoのソースコード一式に含まれています。
+
+EclipseでBytespressoのソースコードをJavaプロジェクトとして開ける状態にしてあれば、Run As > Java Applicationで`HelloWorld.java`をEclipseから実行できます。この時、JVMの引数はRun Configurationsウィンドウを開いて次のように設定します。
+![JVM option to run Bytespreeso code](img/jvm-option.png?raw=true)
 
 ###生成される中間ファイル
 
-ここで、カレントディレクトリに次のようなファイルが吐き出されているのを確認することができます。
+ここで、上記のHelloWorld.classを実行した際、次のようなファイルが吐き出されているのを確認することができます。`bytespresso.c`、`a.out`はjavaコマンドを実行した時のディレクトリ（Eclipseの場合はプロジェクトのトップディレクトリ）に出力されます。`HelloWorld$$Lambda$1.class`及び`java`ディレクトリは`-Djdk.internal.lambda.dumpProxyClasses`が指すディレクトリに出力されます。
+
 
 ```sh
 $ ls -F
@@ -53,7 +62,7 @@ HelloWorld$$Lambda$1.class	HelloWorld.java			bytespresso.c
 HelloWorld.class		a.out*				java/
 ```
 
-`HelloWorld.java`ソースにおいては、`StdDriver.invoke`メソッドに引数としてlambda式を渡していますが、このlambda式がC言語に変換されたものが`bytespresso.c`で、これをコンパイルしたバイナリが`a.out`です。`a.out`を単体で実行すると、`Hello, World!`出力が得られます。
+`HelloWorld.java`ソースでが、`StdDriver.invoke`メソッドにlambda式を渡していますが、このlambda式がC言語に変換されたものが`bytespresso.c`で、これをコンパイルしたバイナリが`a.out`です。`a.out`を単体で実行すると、`Hello, World!`出力が得られます。
 
 ```sh
 $ ./a.out
@@ -64,19 +73,17 @@ Hello, World!
 
 これらのファイルは、lambda式をコンパイルするにあたって、処理系が吐き出したlambda式のバイトコード（classファイル）です。
 
-先の事例で`HelloWorld.class`の実行にあたり、`java`のオプションとして`-Djdk.internal.lambda.dumpProxyClasses=.`を指定していました。これは、このlambda式のバイトコード（正確にはlambda式を呼び出すプロキシのバイトコード）を吐き出すディレクトリを指定するもので、この例ではカレントディレクトリに吐き出すように指定していました。lambda式のバイトコードを吐き出す先は、もちろん、ユーザーが決めて良いのですが、classとして読み込めるようにCLASSPATHが通っている必要があります。
-
-`bytespresso.c`や`a.out`が吐き出されるディレクトリもまた、変更することが可能です。方法については後述します。
+`bytespresso.c`や`a.out`が吐き出されるディレクトリは変更することが可能です。方法については後述します。
 
 ###どんなlambda式が変換できるの？
 
 現状BytespressoがCコードに変換できるlambda式には制限があります。制限については別途記述します。変換においてStringの扱いに制限が出てしまう都合、残念ながら多くのStandard Java APIは使えません。
 
-`HelloWorld.java`において、文字列の出力に`System.out.println`メソッドが使われず、代わりに`Util.print`関数及び`Util.println`メソッドが使われていますが、これは、変換対象のlambda式に`System.out.println`メソッドが使えないという制限からくるものです。
+`HelloWorld.java`において、文字列の出力に`System.out.println`メソッドが使われず、代わりに`Util.printer.p`メソッド及び`Util.printer.ln`メソッドが使われていますが、これは、変換対象のlambda式に`System.out.println`メソッドが使えないという制限からくるものです。
 
 変換対象となるlambda式はJava言語で書きます。lambda式から呼ばれるメソッドもまた、変換対象となります。このJavaメソッドにアノテーションをつけることで、コードをCのNative関数に置き換えたり、JVMへ実行を依頼したりすることができます。
 
-例えば、`Util.print`メソッドは`@Native`アノテーションでCのNative関数に置き換えられています。
+例えば、`Util.print`メソッドは`@Native`アノテーションでCのNative関数に置き換えられています。（下記のコードは現状のライブラリ実装とは異なります）
 
 ```Java
 @Native("fprintf(stdout, \"%d\", (int)v1); return 0;")
@@ -131,27 +138,31 @@ Hello World on MPI processes
 以下のコードを`HelloMPI.java`という名前で保存します。このコードは、`MPIDriver.invoke`メソッドの引数になっているlambda式をMPIプログラムとして実行するものです。
 
 ```java:HelloMPI.java
+import javassist.offload.Options;
 import javassist.offload.lib.MPI;
 import javassist.offload.lib.MPIDriver;
 import javassist.offload.lib.Util;
 
 public class HelloMPI {
     public static void main(String[] args) throws Exception {
+        main();
+    }
 
+    public static void main() throws Exception {
+        Options.portableInitialization = true;
+        
         new MPIDriver(4).invoke(() -> {
-                int rank;
-                int procs;
-                rank = MPI.commRank();
-                procs = MPI.commSize();
-                for (int i = 0; i < procs; i++) {
-                        MPI.barrier();
-                        if (i == rank) {
-                                Util.print("Hello ");
-                                Util.print(i);
-                                Util.println();
-                        }
-                }
-        });
+        	int rank;
+        	int procs;
+        	rank = MPI.commRank();
+        	procs = MPI.commSize();
+        	for (int i = 0; i < procs; i++) {
+        		MPI.barrier();
+        		if (i == rank) {
+	        		Util.printer.p("Hello ").p(MPI.commRank()).ln();
+        		}
+        	}
+        });        
     }
 }
 ```
@@ -174,7 +185,15 @@ Hello 2
 Hello 3
 ```
 
-lambda式部分は`HelloMPI`実行時にCコード`bytespresso.c`に変換されます。このコードはMPIプログラムとして`mpicc`でコンパイルされ、`mpiexec`で実行されます。この一連の動きをMPIDriverがになっています。
+上記のサンプルプログラムは`src/test/sample/HelloMPI.java`としてBytespressoのソースコード一式に含まれています。
+
+EclipseでBytespressoのソースコードをJavaプロジェクトとして開ける状態にしてあれば、Run As > Java Applicationで`HelloMPI.java`をEclipseから実行できます。この時、JVMの引数は`HelloWorld.java`の時と同様に、Run Configurationsウィンドウを開いてArgumentsタブを次のように設定します。
+![JVM option to run Bytespreeso code](img/jvm-option.png?raw=true)
+
+さらにEnvironmentタブでmpiccへのパスを通し、MPIランタイムのためのダイナミックリンクライブラリのパスを通します。設定するパスは実行環境に依存することとなります。
+![JVM environment to run Bytespreeso code](img/jvm-environment.png?raw=true)
+
+lambda式部分は`HelloMPI`実行時にCコード`bytespresso.c`に変換されます。このコードはMPIプログラムとして`mpicc`でコンパイルされ、`mpiexec`で実行されます。この一連の動きをMPIDriverが担っています。
 
 デフォルトでは、`mpiexec`のオプションは`-n`だけで実行され、ホストファイルなどの設定はありません。`MPIDriver`コンストラクタの引数として埋め込まれていたノード数`4`だけが設定され、ローカルマシン内にMPIプロセスが4つ立ち上がることになります。
 
@@ -233,27 +252,25 @@ Javaメソッド`MPI.barrier`は`javassist.offload.lib.MPI`クラスで定義さ
 `MPI.barrier`メソッドの呼び出し元となっていた（変換対象の）lambda式は次のように変換されています。
 
 ```c
-void HelloMPI_lambda_main_0_2() {
+void HelloMPI_lambda_0_2() {
  int v0;
  int v1;
  int v2;
 
   v0 = MPI_commRank_3();
   v1 = MPI_commSize_4();
-  ;
 
  L1:
   for (v2 = 0; v2 < v1; ++v2) {
   MPI_barrier_5();
   if (v2 != v0) goto L2;
-  Util_print_6(((struct java_string*)"\2\0\0\0\6\0\0\0" "Hello "));
-  Util_print_9(v2);
-  Util_println_10();
+  Util_Printer_ln_12(Util_Printer_p_10(Util_Printer_p_6_0(&gvar1, ((struct java_string*)"\2\0\0\0\6\0\0\0" "Hello ")), MPI_commRank_3()));
 
  L2:
-  ; } /* for L1 */
+  ;
 
  L3:
+  ; } /* for L1 */
   return ;
 
 }
