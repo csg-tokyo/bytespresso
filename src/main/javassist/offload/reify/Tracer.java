@@ -3,6 +3,8 @@
 package javassist.offload.reify;
 
 import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -683,13 +685,32 @@ public class Tracer {
     {
         try {
             Class<?> klass = Class.forName(className);
-            java.lang.reflect.Field f = getField(klass, fieldName);
-            f.setAccessible(true);
-            return f.get(null);
+            // return doPrivileged(() -> {
+                java.lang.reflect.Field f = getField(klass, fieldName);
+                f.setAccessible(true);
+                return f.get(null);
+            // });
         }
         catch (Exception e) {
             throw new NotFoundException("cannot access " + className + "." + fieldName, e);
         }
+    }
+
+    static interface Action<T> {
+        public T doit() throws Exception;
+    }
+
+    private static Object doPrivileged(final Action<?> action) throws Exception {
+        if (System.getSecurityManager() == null)
+            return action.doit();
+        else
+            return AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                public Object run() {
+                    try {
+                        return action.doit();
+                    } catch (Exception e) { throw new RuntimeException(e); }
+                }
+            });
     }
 
     /**

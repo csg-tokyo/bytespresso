@@ -70,11 +70,12 @@ public class Runner {
      * where ./bin is a directory included in CLASSPATH.
      */
     public static void main(String[] args) throws Exception {
-        new Runner().main2(args);
+        new Runner().main1(args);
     }
 
-    public static void main1(String[] args) throws Exception {
-        new Runner().testDouble2Array();
+    public void main1(String[] args) throws Exception {
+        // new Runner().testDouble2Array();
+        testGetPrivateField();
     }
 
     public void main2(String[] args) throws Exception {
@@ -3621,6 +3622,22 @@ public class Runner {
 
     @Inline public static int finalInlineA(FinalTest2 ft) {
         return ft.value;
+    }
+
+    public @Test void testGetPrivateField() throws Exception {
+        StdDriver2 drv = new StdDriver2();
+        int res = (int)drv.invoke(Runner.class, "getPrivateField", null, new Object[0]);
+        if (res == 0)
+            System.out.println("testGetPrivateField OK");
+        else
+            throw new Exception("testGetPrivateField " + res);
+    }
+
+    public static int getPrivateField() {
+        if (System.getSecurityManager() == null)
+            return 0;
+        else
+            return 1;
     }
 
     // utility functions
