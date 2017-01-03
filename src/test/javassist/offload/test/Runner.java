@@ -70,12 +70,11 @@ public class Runner {
      * where ./bin is a directory included in CLASSPATH.
      */
     public static void main(String[] args) throws Exception {
-        new Runner().main1(args);
+        new Runner().main2(args);
     }
 
     public void main1(String[] args) throws Exception {
-        // new Runner().testDouble2Array();
-        testGetPrivateField();
+        new Runner().testDouble2Array();
     }
 
     public void main2(String[] args) throws Exception {
@@ -176,6 +175,7 @@ public class Runner {
         testReifier();
         testFinal();
         testFinalInline();
+        testGetPrivateField();
     }
 
     public static void fib0() {
@@ -3633,8 +3633,16 @@ public class Runner {
             throw new Exception("testGetPrivateField " + res);
     }
 
+    static class GetPrivate2 {
+        private int value = 3;
+        int get() { return value; }
+        void set(int i) { value = i; }
+    }
+
     public static int getPrivateField() {
-        if (System.getSecurityManager() == null)
+        GetPrivate2 gp = new GetPrivate2();
+        // if (System.getSecurityManager() == null)
+        if (gp.get() == 3)
             return 0;
         else
             return 1;
