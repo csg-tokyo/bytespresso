@@ -83,4 +83,18 @@ public class Tests {
 
     @Native("return k;")
     public static int test02(int k, double d) { return 0; }
+
+    @Test public void testArray() throws Exception {
+        Function f = makeAST(Tests.Foo.class.getName(), "test03");
+        println(f);
+    }
+
+    public static class Foo {
+        double[] a = new double[8];
+        double[] b = new double[8];
+        public int test03(int n) {
+            a[n] = b[n] = n;
+            return n;
+        }
+    }
 }

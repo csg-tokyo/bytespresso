@@ -517,8 +517,8 @@ public class BlockTracer {
             saveStackFrame();
             int len = op - Opcode.DUP2 + 2;
             doDUP_XX(2, len);
-            stackFrame[stackTop - 1] = stackFrame[stackTop + 1];
-            stackFrame[stackTop - 2] = stackFrame[stackTop];
+            stackFrame[stackTop - len + 1] = stackFrame[stackTop + 1];
+            stackFrame[stackTop - len] = stackFrame[stackTop];
             stackTop += 2;
             break; }
         case Opcode.SWAP :
