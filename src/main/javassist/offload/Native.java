@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
 /**
  * Native function.
  *
- * <p>The method with this annotation must be static.
+ * <p>
  * The argument specifies the body of this method in C.
  * The body does not include surrounding braces.</p>
  *
@@ -27,5 +27,5 @@ public @interface Native {
     /**
      * The function body.
      */
-    String value();
+    String value() default "";
 }

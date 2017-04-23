@@ -5,10 +5,12 @@ import javassist.ClassPool;
 import javassist.CtClass;
 import javassist.CtMethod;
 import javassist.NotFoundException;
+import javassist.offload.Foreign;
 import javassist.offload.Native;
 import javassist.offload.ast.ASTree;
 import javassist.offload.ast.Call;
 import javassist.offload.ast.Function;
+import javassist.offload.ast.JMethod;
 import javassist.offload.clang.CDispatcher;
 import javassist.offload.clang.CFunctionMetaclass;
 import javassist.offload.clang.CodeGen;
@@ -20,6 +22,7 @@ import javassist.offload.reify.FunctionTable;
 import javassist.offload.reify.TraceContext;
 import javassist.offload.reify.Tracer;
 import javassist.offload.reify.UniqueID;
+import javassist.offload.reify.Reifier.Snapshot;
 import javassist.offload.test.StdDriver2;
 
 import org.junit.Test;
@@ -96,5 +99,21 @@ public class Tests {
             a[n] = b[n] = n;
             return n;
         }
+    }
+
+    @Test public void testReify() throws Exception {
+        CtClass cc = cpool.get(Bar.class.getName());
+        CtMethod cm = cc.getDeclaredMethod("baz");
+        Reifier reifier = new Reifier(cm, new Object[] { new Bar() });
+        Snapshot image = reifier.snap();
+        for (JMethod f: image.functionTable)
+            if (f != image.function)
+                System.out.println(f);
+    }
+
+    public static class Bar {
+        public void baz() { foo(); bar(); }
+        @Native public void foo() {}
+        @Foreign  public static void bar() {}
     }
 }
