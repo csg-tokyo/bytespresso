@@ -230,6 +230,14 @@ public class Util {
     }
 
     /**
+     * Natural logarithm (base e) of a double value.
+     */
+    @Foreign
+    public static double log(double f) {
+        return Math.log(f);
+    }
+
+    /**
      * Square root.
      */
     @Foreign

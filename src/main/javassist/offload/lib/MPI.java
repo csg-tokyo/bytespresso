@@ -106,6 +106,38 @@ public class MPI {
     }
 
     /**
+     * Constant <code>MPI_PROC_NULL</code>
+     */
+    @Native("return MPI_PROC_NULL;")
+    public static int MPI_PROC_NULL() {
+        return -1;
+    }
+
+    /**
+     * Constant <code>MPI_ANY_SOURCE</code>
+     */
+    @Native("return MPI_ANY_SOURCE;")
+    public static int MPI_ANY_SOURCE() {
+        return -2;
+    }
+
+    /**
+     * Constant <code>MPI_ROOT</code>
+     */
+    @Native("return MPI_ROOT;")
+    public static int MPI_ROOT() {
+        return -3;
+    }
+
+    /**
+     * Constant <code>MPI_ANY_TAG</code>
+     */
+    @Native("return MPI_ANY_TAG;")
+    public static int MPI_ANY_TAG() {
+        return -1;
+    }
+
+    /**
      * <code>MPI_Comm_rank()</code> function.
      */
     @Native("int pid; MPI_Comm_rank(MPI_COMM_WORLD, &pid); return pid;")
@@ -389,6 +421,47 @@ public class MPI {
     }
 
     /**
+     * <code>MPI_bcast</code> function for an array.
+     *
+     * @param buffer    a send/receive buffer.
+     * @param count     the number of elements to broadcast.
+     * @param root      rank of broadcast root.
+     */
+    public static void bcast(int[] buffer, int count, int root) {
+        bcastIntC(Unsafe.toCArray(buffer), count, root);
+    }
+
+    public static void bcast(float[] buffer, int count, int root) {
+        bcastFloatC(Unsafe.toCArray(buffer), count, root);
+    }
+
+    public static void bcast(double[] buffer, int count, int root) {
+        bcastDoubleC(Unsafe.toCArray(buffer), count, root);
+    }
+
+    /**
+     * <code>MPI_bcast</code> function for an array.
+     *
+     * @param buffer    a C pointer to a send/receive buffer.
+     * @param count     the number of elements to broadcast.
+     * @param root      rank of broadcast root.
+     */
+    @Native("MPI_Bcast(v1, v2, MPI_INT, v3, MPI_COMM_WORLD);")
+    public static void bcastIntC(@NativePtr int[] buffer, int count, int root) {
+        error();
+    }
+
+    @Native("MPI_Bcast(v1, v2, MPI_FLOAT, v3, MPI_COMM_WORLD);")
+    public static void bcastFloatC(@NativePtr float[] buffer, int count, int root) {
+        error();
+    }
+
+    @Native("MPI_Bcast(v1, v2, MPI_DOUBLE, v3, MPI_COMM_WORLD);")
+    public static void bcastDoubleC(@NativePtr double[] buffer, int count, int root) {
+        error();
+    }
+
+    /**
      * <code>MPI_Wait</code> function.
      */
     public static void wait(Request req) {
@@ -595,6 +668,20 @@ public class MPI {
         return MPIRuntime.reduce(local, op);
     }
 
+    @Native("double src[1]; double dest[1]; src[0] = v1;\n"
+            + "MPI_Allreduce(src, dest, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);\n"
+            + "return dest[0];")
+    public static double allReduce_sum(double local) {
+        return MPIRuntime.reduce(local, MPI.sum());
+    }
+
+    @Native("double src[1]; double dest[1]; src[0] = v1;\n"
+            + "MPI_Allreduce(src, dest, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);\n"
+            + "return dest[0];")
+    public static double allReduce_max(double local) {
+        return MPIRuntime.reduce(local, MPI.max());
+    }
+
     /**
      * {@code MPI_Allreduce()} function.
      *
@@ -608,6 +695,15 @@ public class MPI {
 
     @Native("MPI_Allreduce(v1, v2, v3, MPI_DOUBLE, (MPI_Op)v4, MPI_COMM_WORLD);")
     private static void allReduce2(double[] local, double[] result, int length, MPI.Op op) {
+        error();
+    }
+
+    public static void allReduce_sum(double[] local, double[] result) {
+        allReduce2_sum(Unsafe.toCArray(local), Unsafe.toCArray(result), local.length);
+    }
+
+    @Native("MPI_Allreduce(v1, v2, v3, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);")
+    private static void allReduce2_sum(double[] local, double[] result, int length) {
         error();
     }
 
