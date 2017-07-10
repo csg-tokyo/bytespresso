@@ -491,7 +491,18 @@ public class CodeGen implements Visitor {
                 else if (obj instanceof Float) {
                     out.append(obj.toString()).append('F');
                     return true;
+                }else if (obj instanceof Byte || obj instanceof Short) {
+                    out.append(obj.toString());
+                    return true;
                 }
+            }
+            else if (obj instanceof Boolean) {
+                out.append(((Boolean)obj).booleanValue() ? "(!0)" : "0");
+                return true;
+            }
+            else if (obj instanceof Character) {
+                out.append('\'').append(obj.toString()).append('\'');
+                return true;
             }
             else {
                 final String var = isGivenObject(obj);

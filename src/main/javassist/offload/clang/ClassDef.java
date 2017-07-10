@@ -430,6 +430,18 @@ public class ClassDef extends CTypeDef {
                     gen.append(obj.toString()).append('F');
                     return true;
                 }
+                else if (obj instanceof Byte || obj instanceof Short) {
+                    gen.append(obj.toString());
+                    return true;
+                }
+            }
+            else if (obj instanceof Boolean) {
+                gen.append(((Boolean)obj).booleanValue() ? "(!0)" : "0");
+                return true;
+            }
+            else if (obj instanceof Character) {
+                gen.append('\'').append(obj.toString()).append('\'');
+                return true;
             }
             else {
                 final String var = gen.isGivenObject(obj);
@@ -475,7 +487,15 @@ public class ClassDef extends CTypeDef {
                         return CtClass.doubleType;
                     else if (obj instanceof Float)
                         return CtClass.floatType;
+                    else if (obj instanceof Short)
+                        return CtClass.shortType;
+                    else if (obj instanceof Byte)
+                        return CtClass.byteType;
                 }
+                else if (obj instanceof Boolean)
+                    return CtClass.booleanType;
+                else if (obj instanceof Character)
+                    return CtClass.charType;
                 else {
                     String var = gen.isGivenObject(obj);
                     if (var != null)
