@@ -1,13 +1,13 @@
 package npbench3lu.arrayXD;
 
 public class Array2Dint {
-    protected int beginX;
-    protected int beginY;
-    protected int endX;
-    protected int endY;
-    protected int sizeX;
-    protected int sizeY;
-    protected int data[];
+	final protected int beginX;
+	final protected int beginY;
+	final protected int endX;
+	final protected int endY;
+	final protected int sizeX;
+	final protected int sizeY;
+	final protected int data[];
 
     public Array2Dint(int sx, int sy) {
         sizeX = sx;

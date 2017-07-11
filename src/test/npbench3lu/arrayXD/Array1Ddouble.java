@@ -1,10 +1,10 @@
 package npbench3lu.arrayXD;
 
 public class Array1Ddouble {
-    protected int beginX;
-    protected int endX;
-    protected int sizeX;
-    protected double data[];
+	final protected int beginX;
+	final protected int endX;
+	final protected int sizeX;
+	final protected double data[];
 
     public Array1Ddouble(int sx) {
         sizeX = sx;
@@ -34,7 +34,7 @@ public class Array1Ddouble {
 
     public void setData(double[] values) {
         // data = (double[])values.clone();
-        data = new double[values.length];
+        //data = new double[values.length];
         for (int i = 0; i < values.length; i++) {
             data[i] = values[i];
         }

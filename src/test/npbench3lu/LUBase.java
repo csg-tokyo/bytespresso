@@ -42,7 +42,6 @@
 */
 package npbench3lu;
 
-import javassist.offload.lib.Util;
 import npbench3lu.arrayXD.*;
 
 public class LUBase implements Cloneable {
@@ -89,20 +88,24 @@ public class LUBase implements Cloneable {
     // parameter (cs7='randi8')
 
     public static final String BMName = "LU";
-    public char clazz = 'S';
+    public final char clazz;
 
-    public int nnodes_compiled = 1;
-    protected int isiz01 = 12, isiz02 = 12, isiz03 = 12;
-    protected int isiz1 = 12, isiz2 = 12, isiz3 = isiz03;
+    public final int nnodes_compiled;
+//    protected final int isiz01 = 12, isiz02 = 12, isiz03 = 12;
+    protected final int isiz01, isiz02, isiz03;
+    //protected final int isiz1 = 12, isiz2 = 12, isiz3 = isiz03;
+    protected final int isiz1, isiz2, isiz3;
 
-    protected int itmax_default = 50, inorm_default = 50;
-    protected double dt_default = 0.5;
-    protected boolean convertdouble = false;
+//    protected final int itmax_default = 50, inorm_default = 50;
+    protected final int itmax_default, inorm_default;
+//    protected final double dt_default = 0.5;
+    protected final double dt_default;
+    protected final boolean convertdouble = false;
 
     // ---------------------------------------------------------------------
     // See applu.incl
     // ---------------------------------------------------------------------
-    protected int ipr_default = 1;
+    protected final int ipr_default = 1;
     protected static final double omega_default = 1.2, tolrsd1_def = .00000001, tolrsd2_def = .00000001,
             tolrsd3_def = .00000001, tolrsd4_def = .00000001, tolrsd5_def = .00000001, c1 = 1.4, c2 = 0.4, c3 = .1,
             c4 = 1, c5 = 1.4;
@@ -136,7 +139,7 @@ public class LUBase implements Cloneable {
     // Note: corresponding array (called "v") in routines blts, buts,
     // and l2norm are similarly padded
     // ---------------------------------------------------------------------
-    protected Array4Ddouble u, rsd, frct, flux;
+    protected final Array4Ddouble u, rsd, frct, flux;
 
     // ---------------------------------------------------------------------
     // output control parameters
@@ -148,11 +151,11 @@ public class LUBase implements Cloneable {
     // ---------------------------------------------------------------------
     protected int itmax, invert;
     protected double dt, omega, frc, ttotal;
-    protected Array1Ddouble tolrsd = new Array1Ddouble(5);
-    protected Array1Ddouble rsdnm = new Array1Ddouble(5);
-    protected Array1Ddouble errnm = new Array1Ddouble(5);
+    protected final Array1Ddouble tolrsd = new Array1Ddouble(5);
+    protected final Array1Ddouble rsdnm = new Array1Ddouble(5);
+    protected final Array1Ddouble errnm = new Array1Ddouble(5);
 
-    protected Array4Ddouble a, b, c, d;
+    protected final Array4Ddouble a, b, c, d;
 
     // ---------------------------------------------------------------------
     // coefficients of the exact solution
@@ -172,7 +175,7 @@ public class LUBase implements Cloneable {
     // .4 , .3 , .5 , .1 , .3 ,
     // .3 , .5 , .4 , .3 , .2
     // };
-    protected Array2Ddouble ce = new Array2Ddouble(5, 13);
+    protected final Array2Ddouble ce = new Array2Ddouble(5, 13);
 
     // ---------------------------------------------------------------------
     // multi-processor common blocks
@@ -204,9 +207,10 @@ public class LUBase implements Cloneable {
     protected int id, ndim, num, xdim, ydim, row, col;
     protected int north, south, east, west;
     protected int from_s = 1, from_n = 2, from_e = 3, from_w = 4;
-    protected int npmax = isiz01 + isiz02;
-    protected Array1Dboolean icommn, icomms, icomme, icommw;
-    protected Array2Ddouble buf, buf1;
+    //protected int npmax = isiz01 + isiz02;
+    protected final int npmax;
+    protected final Array1Dboolean icommn, icomms, icomme, icommw;
+    protected final Array2Ddouble buf, buf1;
 
     protected double maxtime;
 
@@ -218,8 +222,8 @@ public class LUBase implements Cloneable {
     public boolean timeron;
     public Timer timer = new Timer();
 
-    public LUBase() {
-    };
+    //public LUBase() {
+    //};
 
     public LUBase(char cls, int nprocs) {
 
@@ -259,6 +263,12 @@ public class LUBase implements Cloneable {
             itmax_default = inorm_default = 300;
             dt_default = 1;
             break;
+        default:
+            problem_size = 12;
+            itmax_default = inorm_default = 50;
+            dt_default = .5;
+        	System.out.println("class should be one of S, W, A, B, C, D");
+        	System.exit(1);
         }
 
         int logprocs;
@@ -268,6 +278,8 @@ public class LUBase implements Cloneable {
             // printf("setparams: Number of processors must be a power of two
             // (1,2,4,...) for this benchmark\n");
             // exit(1);
+        	System.out.println("Number of processors must be a power of two (1,2,4,...) for this benchmark");
+        	System.exit(1);
             nprocs = 1;
         }
 
@@ -278,15 +290,19 @@ public class LUBase implements Cloneable {
             xdiv += 1;
         xdiv = ipow2(xdiv);
         ydiv = ipow2(ydiv);
-        isiz1 = problem_size / xdiv;
-        if (isiz1 * xdiv < problem_size)
-            isiz1++;
-        isiz2 = problem_size / ydiv;
-        if (isiz2 * ydiv < problem_size)
-            isiz2++;
-
+        if (problem_size / xdiv * xdiv < problem_size) {
+        	isiz1 = problem_size / xdiv + 1;
+        } else {
+        	isiz1 = problem_size / xdiv;
+        }
+        if (problem_size / ydiv * ydiv < problem_size) {
+        	isiz2 = problem_size / ydiv + 1;
+        } else {
+        	isiz2 = problem_size / ydiv;
+        }
         isiz01 = isiz02 = isiz03 = problem_size;
         isiz3 = isiz03;
+        
         nnodes_compiled = nprocs;
 
         // Array initialization

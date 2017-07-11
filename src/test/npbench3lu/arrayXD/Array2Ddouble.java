@@ -1,13 +1,13 @@
 package npbench3lu.arrayXD;
 
 public class Array2Ddouble {
-    protected int beginX;
-    protected int beginY;
-    protected int endX;
-    protected int endY;
-    protected int sizeX;
-    protected int sizeY;
-    protected double data[];
+	final protected int beginX;
+	final protected int beginY;
+	final protected int endX;
+	final protected int endY;
+	final protected int sizeX;
+	final protected int sizeY;
+	final protected double data[];
 
     public Array2Ddouble(int sx, int sy) {
         sizeX = sx;
@@ -47,7 +47,7 @@ public class Array2Ddouble {
 
     public void setData(double[] values) {
         // data = (double[])values.clone();
-        data = new double[values.length];
+        //data = new double[values.length];
         for (int i = 0; i < values.length; i++) {
             data[i] = values[i];
         }

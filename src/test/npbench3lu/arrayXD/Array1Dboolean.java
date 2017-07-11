@@ -1,10 +1,10 @@
 package npbench3lu.arrayXD;
 
 public class Array1Dboolean {
-    protected int beginX;
-    protected int endX;
-    protected int sizeX;
-    protected boolean data[];
+    final protected int beginX;
+    final protected int endX;
+    final protected int sizeX;
+    final protected boolean data[];
 
     public Array1Dboolean(int sx) {
         sizeX = sx;

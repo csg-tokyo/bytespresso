@@ -41,8 +41,11 @@
 */
 package npbench3lu;
 
-import java.io.*;
-import java.text.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.FileReader;
+import java.io.Serializable;
+import java.text.DecimalFormat;
 
 public class BMResults implements Serializable {
     public String name;

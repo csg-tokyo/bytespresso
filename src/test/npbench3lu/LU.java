@@ -47,17 +47,15 @@
 
 package npbench3lu;
 
-import java.io.*;
+import java.io.File;
+import java.text.DecimalFormat;
 
 import javassist.offload.Options;
 import javassist.offload.javatoc.DriverException;
 import javassist.offload.lib.MPI;
 import javassist.offload.lib.MPIDriver;
 import javassist.offload.lib.Util;
-import npbench3lu.LU;
 import npbench3lu.arrayXD.*;
-
-import java.text.*;
 
 public class LU extends LUBase {
     /**
@@ -212,7 +210,8 @@ public class LU extends LUBase {
         init_comm();
 
         if (id == 0) {
-            BMArgs.Banner(BMName, clazz);
+//            BMArgs.Banner(BMName, clazz);
+            BMArgs.Banner(BMName, '?');
         }
 
         //

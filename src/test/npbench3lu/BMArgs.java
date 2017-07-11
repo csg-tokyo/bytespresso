@@ -41,7 +41,7 @@
 */
 package npbench3lu;
 
-import java.io.*;
+import java.io.Serializable;
 
 import javassist.offload.lib.Util;
 

@@ -1,16 +1,16 @@
 package npbench3lu.arrayXD;
 
 public class Array3Dint {
-    protected int beginX;
-    protected int beginY;
-    protected int beginZ;
-    protected int endX;
-    protected int endY;
-    protected int endZ;
-    protected int sizeX;
-    protected int sizeY;
-    protected int sizeZ;
-    protected int data[];
+	final protected int beginX;
+	final protected int beginY;
+	final protected int beginZ;
+	final protected int endX;
+	final protected int endY;
+	final protected int endZ;
+	final protected int sizeX;
+	final protected int sizeY;
+	final protected int sizeZ;
+	final protected int data[];
 
     public Array3Dint(int sx, int sy, int sz) {
         sizeX = sx;

@@ -1,19 +1,19 @@
 package npbench3lu.arrayXD;
 
 public class Array4Dint {
-    protected int beginX;
-    protected int beginY;
-    protected int beginZ;
-    protected int beginW;
-    protected int endX;
-    protected int endY;
-    protected int endZ;
-    protected int endW;
-    protected int sizeX;
-    protected int sizeY;
-    protected int sizeZ;
-    protected int sizeW;
-    protected int data[];
+	final protected int beginX;
+	final protected int beginY;
+	final protected int beginZ;
+	final protected int beginW;
+	final protected int endX;
+	final protected int endY;
+	final protected int endZ;
+	final protected int endW;
+	final protected int sizeX;
+	final protected int sizeY;
+	final protected int sizeZ;
+	final protected int sizeW;
+	final protected int data[];
 
     public Array4Dint(int sx, int sy, int sz, int sw) {
         sizeX = sx;

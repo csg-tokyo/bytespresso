@@ -1,16 +1,16 @@
 package npbench3lu.arrayXD;
 
 public class Array3Ddouble {
-    protected int beginX;
-    protected int beginY;
-    protected int beginZ;
-    protected int endX;
-    protected int endY;
-    protected int endZ;
-    protected int sizeX;
-    protected int sizeY;
-    protected int sizeZ;
-    protected double data[];
+	final protected int beginX;
+	final protected int beginY;
+	final protected int beginZ;
+	final protected int endX;
+	final protected int endY;
+	final protected int endZ;
+	final protected int sizeX;
+	final protected int sizeY;
+	final protected int sizeZ;
+	final protected double data[];
 
     public Array3Ddouble(int sx, int sy, int sz) {
         sizeX = sx;
