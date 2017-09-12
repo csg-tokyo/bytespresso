@@ -32,7 +32,7 @@ public class StandaloneMain extends MainFunction {
                    "  if (child_pid == 0) {\n" +
                    // child process
                    "    dup2(pipe1[0], 0); dup2(pipe2[1], 2); close(pipe1[1]); close(pipe2[0]);\n" +
-                   "    execlp(\"java\", \"java\", " + javaOption + "\"javassist.offload.Server\", NULL);\n" +
+                   "    execlp(\"java\", \"java\", " + javaOption + "\"javassist.offload.javatoc.Server\", NULL);\n" +
                    "    fputs(\"*** java: command not found ***\\n\", stderr);\n" +
                    "    exit(127); }\n\n" +     // 127: command not found
                    // parent process
