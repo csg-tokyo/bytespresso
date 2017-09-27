@@ -22,7 +22,7 @@ public class DriverException extends Exception {
 
     public DriverException(String msg) { this(msg, 0); }
 
-    public DriverException(Throwable t) { this(t.getMessage(), t, 0); }
+    public DriverException(Throwable t) { this(t.getClass().getName() + ", " + t.getMessage(), t, 0); }
 
     public DriverException(String msg, Throwable t) { this(msg, t, 0); }
 
