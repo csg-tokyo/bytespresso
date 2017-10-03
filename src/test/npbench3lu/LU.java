@@ -289,6 +289,7 @@ public class LU extends LUBase {
         // verified ? 1 : 0, bid);
         //results.print();
         Util.printer.p(getMFLOPS(itmax, tm / 1000000)).p(" mflops").ln();
+        Util.printer.p(tm/1000000).p(" seconds").ln();        
         }
 
         // ---------------------------------------------------------------------
