@@ -65,7 +65,8 @@ public class LU extends LUBase {
     public static boolean useStdDriverIfNumProcsIs1 = false;
     public int bid = -1;
     public BMResults results;
-
+    private static char CLASS;
+    
     public static void main(String[] args) throws DriverException {
         Options.deadcodeElimination = false;
         if (args.length == 0) {
@@ -76,6 +77,7 @@ public class LU extends LUBase {
         }
 
         char clazz = classArgument(args);
+        CLASS = clazz;
         int numProcs = nprocrowArgument(args);
         LU.java = javaArgument(args);
         System.out.println("class=" + clazz + " np=" + numProcs + " java=" + LU.java);
@@ -264,7 +266,7 @@ public class LU extends LUBase {
         // perform the SSOR iterations
         // ---------------------------------------------------------------------
         double tm;
-        tm = ssor();
+        tm = ssor(); // micro second
 
         // ---------------------------------------------------------------------
         // compute the solution error
@@ -281,12 +283,14 @@ public class LU extends LUBase {
         // ---------------------------------------------------------------------
         if (id == 0) {
             boolean verified = verify(rsdnm, errnm, frc);
-        }
 
-        // results = new BMResults(BMName, CLASS, nx0, ny0, nz0, itmax, tm,
+        // results = new BMResults(BMName, 'A', nx0, ny0, nz0, itmax, tm,
         // getMFLOPS(itmax, tm), "floating point",
-        // verified, bid);
-        // results.print();
+        // verified ? 1 : 0, bid);
+        //results.print();
+        Util.printer.p(getMFLOPS(itmax, tm / 1000000)).p(" mflops").ln();
+        Util.printer.p(tm/1000000).p(" seconds").ln();        
+        }
 
         // ---------------------------------------------------------------------
         // More timers
@@ -3993,8 +3997,9 @@ public class LU extends LUBase {
 
         MPI.barrier();
 
-        timer.resetAllTimers();
-        timer.start(1);
+        //timer.resetAllTimers();
+        //timer.start(1);
+        double wtime0 = Util.time();
 
         // c---------------------------------------------------------------------
         // c the timestep loop
@@ -4128,10 +4133,10 @@ public class LU extends LUBase {
 
         }
 
-        timer.stop(1);
-        wtime = timer.readTimer(1);
+        //timer.stop(1);
+        wtime = Util.time();  // timer.readTimer(1);
 
-        maxtime = MPI.allReduce_max(wtime);
+        maxtime = MPI.allReduce_max(wtime - wtime0);
 
         return maxtime;
 

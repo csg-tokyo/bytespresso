@@ -41,6 +41,10 @@
 */
 package npbench3lu;
 
+import javassist.offload.lib.Util;
+
+//import javassist.bytecode.analysis.Util;
+
 public class Timer {
     public static final int max_counters = 64;
     double start_time[] = new double[max_counters];
@@ -57,12 +61,12 @@ public class Timer {
 
     public void start(int n) {
         // start_time[n]=System.currentTimeMillis();
-        start_time[n] = 0;
+        start_time[n] = Util.time()/1000;
     }
 
     public void stop(int n) {
-        // elapsed_time[n]=System.currentTimeMillis()-start_time[n];
-        elapsed_time[n] = 0;
+        elapsed_time[n]=Util.time()/1000-start_time[n];
+        //elapsed_time[n] = 0;
         elapsed_time[n] /= 1000;
         total_time[n] += elapsed_time[n];
     }
