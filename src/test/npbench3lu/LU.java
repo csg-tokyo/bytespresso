@@ -4128,7 +4128,7 @@ public class LU extends LUBase {
                 // c if (ipr == 1 .and. id.eq.0) {
                 // c write (*,1004) istep
                 // c }
-                return 0; // why?
+                break;
             }
 
         }
