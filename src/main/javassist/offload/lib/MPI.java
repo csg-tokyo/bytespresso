@@ -55,7 +55,7 @@ public class MPI {
             if (flag() == 0)
                 setFlag(1);
             else
-                error();
+                error(0);
         }
 
         /**
@@ -66,11 +66,11 @@ public class MPI {
             if (flag() == 1)
                 setFlag(0);
             else
-                error();
+                error(1);
         }
 
-        private void error() {
-            Util.print("Error: bad use of MPI_Request. Rank=").print(commRank()).println();
+        private void error(int i) {
+            Util.print("Error: bad use of MPI_Request. not ").print(i).print(" Rank=").print(commRank()).println();
             abort();
         }
 
