@@ -202,8 +202,8 @@ public class LU extends LUBase {
 
     public void runBenchMark() {
         int numTimers = t_last + 1;
-        String t_names[] = new String[numTimers];
-        double trecs[] = new double[numTimers];
+        // String t_names[] = new String[numTimers];
+        // double trecs[] = new double[numTimers];
         // setTimers(t_names);
 
         // c---------------------------------------------------------------------
@@ -212,7 +212,7 @@ public class LU extends LUBase {
         init_comm();
 
         if (id == 0) {
-//            BMArgs.Banner(BMName, clazz);
+            // BMArgs.Banner(BMName, clazz);
             BMArgs.Banner(BMName, '?');
         }
 
@@ -284,12 +284,12 @@ public class LU extends LUBase {
         if (id == 0) {
             boolean verified = verify(rsdnm, errnm, frc);
 
-        // results = new BMResults(BMName, 'A', nx0, ny0, nz0, itmax, tm,
-        // getMFLOPS(itmax, tm), "floating point",
-        // verified ? 1 : 0, bid);
-        //results.print();
-        Util.printer.p(getMFLOPS(itmax, tm / 1000000)).p(" mflops").ln();
-        Util.printer.p(tm/1000000).p(" seconds").ln();        
+            // results = new BMResults(BMName, 'A', nx0, ny0, nz0, itmax, tm,
+            // getMFLOPS(itmax, tm), "floating point",
+            // verified ? 1 : 0, bid);
+            //results.print();
+            Util.printer.p(getMFLOPS(itmax, tm / 1000000)).p(" mflops").ln();
+            Util.printer.p(tm/1000000).p(" seconds").ln();        
         }
 
         // ---------------------------------------------------------------------
@@ -3938,7 +3938,8 @@ public class LU extends LUBase {
         Array3Ddouble tv = new Array3Ddouble(5, isiz1, isiz2);
 
         // external timer_read;
-        double wtime, timer_read;
+        double wtime;
+        // double timer_read;
 
         // ROOT = 0;
 
@@ -4019,9 +4020,9 @@ public class LU extends LUBase {
             // c---------------------------------------------------------------------
             // c perform SSOR iteration
             // c---------------------------------------------------------------------
-            dump_u();
-            dump_rsd();
-            dump_flux();
+            // dump_u();
+            // dump_rsd();
+            // dump_flux();
 
             for (k = 2; k <= nz - 1; k++) {
                 for (j = jst; j <= jend; j++) {
@@ -4033,7 +4034,7 @@ public class LU extends LUBase {
                 }
             }
 
-            dump_rsd();
+            // dump_rsd();
 
             for (k = 2; k <= nz - 1; k++) {
                 // c---------------------------------------------------------------------
@@ -4041,7 +4042,7 @@ public class LU extends LUBase {
                 // c---------------------------------------------------------------------
                 jacld(k);
 
-                dump_abcd();
+                // dump_abcd();
 
                 // c---------------------------------------------------------------------
                 // c perform the lower triangular solution
@@ -4049,13 +4050,13 @@ public class LU extends LUBase {
                 blts(isiz1, isiz2, isiz3, nx, ny, nz, k, omega, rsd, a, b, c, d, ist, iend, jst, jend, nx0, ny0, ipt,
                         jpt);
 
-                dump_rsd();
+                // dump_rsd();
             }
 
-            dump_u();
-            dump_rsd();
-            dump_flux();
-            dump_abcd();
+            // dump_u();
+            // dump_rsd();
+            // dump_flux();
+            // dump_abcd();
 
             for (k = nz - 1; k >= 2; k--) {
                 // c---------------------------------------------------------------------
@@ -4071,8 +4072,8 @@ public class LU extends LUBase {
                         ipt, jpt);
             }
 
-            dump_rsd();
-            dump_abcd();
+            // dump_rsd();
+            // dump_abcd();
 
             // c---------------------------------------------------------------------
             // c update the variables
@@ -4091,9 +4092,9 @@ public class LU extends LUBase {
             // c---------------------------------------------------------------------
             // c compute the max-norms of newton iteration corrections
             // c---------------------------------------------------------------------
-            dump_u();
-            dump_rsd();
-            dump_flux();
+            // dump_u();
+            // dump_rsd();
+            // dump_flux();
 
             if (istep % inorm == 0) {
                 l2norm(isiz1, isiz2, isiz3, nx0, ny0, nz0, ist, iend, jst, jend, rsd, delunm);
