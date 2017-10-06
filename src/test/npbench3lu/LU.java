@@ -2409,6 +2409,9 @@ public class LU extends LUBase {
         Unsafe.free(dummy);
     }
 
+    protected final Array2Ddouble phi1_pintgr = new Array2Ddouble(0, isiz2 + 1, 0, isiz3 + 1);
+    protected final Array2Ddouble phi2_pintgr = new Array2Ddouble(0, isiz2 + 1, 0, isiz3 + 1);
+
     public void pintgr() {
 
         // c---------------------------------------------------------------------
@@ -2420,8 +2423,6 @@ public class LU extends LUBase {
         int iglob, iglob1, iglob2;
         int jglob, jglob1, jglob2;
         int ind1, ind2;
-        Array2Ddouble phi1 = new Array2Ddouble(0, isiz2 + 1, 0, isiz3 + 1);
-        Array2Ddouble phi2 = new Array2Ddouble(0, isiz2 + 1, 0, isiz3 + 1);
         double frc1, frc2, frc3;
         double dummy;
 
@@ -2464,8 +2465,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         for (i = 0; i <= isiz2 + 1; i++) {
             for (k = 0; k <= isiz3 + 1; k++) {
-                phi1.set(i, k, 0);
-                phi2.set(i, k, 0);
+                phi1_pintgr.set(i, k, 0);
+                phi2_pintgr.set(i, k, 0);
             }
         }
 
@@ -2476,14 +2477,14 @@ public class LU extends LUBase {
 
                 k = ki1;
 
-                phi1.set(i, j,
+                phi1_pintgr.set(i, j,
                         c2 * (u.get(5, i, j, k) - 0.50e+00 * (u.get(2, i, j, k) * u.get(2, i, j, k)
                                 + u.get(3, i, j, k) * u.get(3, i, j, k) + u.get(4, i, j, k) * u.get(4, i, j, k))
                                 / u.get(1, i, j, k)));
 
                 k = ki2;
 
-                phi2.set(i, j,
+                phi2_pintgr.set(i, j,
                         c2 * (u.get(5, i, j, k) - 0.50e+00 * (u.get(2, i, j, k) * u.get(2, i, j, k)
                                 + u.get(3, i, j, k) * u.get(3, i, j, k) + u.get(4, i, j, k) * u.get(4, i, j, k))
                                 / u.get(1, i, j, k)));
@@ -2493,14 +2494,14 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         // c communicate in i and j directions
         // c---------------------------------------------------------------------
-        exchange_4(phi1, phi2, ibeg, ifin1, jbeg, jfin1);
+        exchange_4(phi1_pintgr, phi2_pintgr, ibeg, ifin1, jbeg, jfin1);
 
         frc1 = 0.0e+00;
 
         for (j = jbeg; j <= jfin1; j++) {
             for (i = ibeg; i <= ifin1; i++) {
-                frc1 = frc1 + (phi1.get(i, j) + phi1.get(i + 1, j) + phi1.get(i, j + 1) + phi1.get(i + 1, j + 1)
-                        + phi2.get(i, j) + phi2.get(i + 1, j) + phi2.get(i, j + 1) + phi2.get(i + 1, j + 1));
+                frc1 = frc1 + (phi1_pintgr.get(i, j) + phi1_pintgr.get(i + 1, j) + phi1_pintgr.get(i, j + 1) + phi1_pintgr.get(i + 1, j + 1)
+                        + phi2_pintgr.get(i, j) + phi2_pintgr.get(i + 1, j) + phi2_pintgr.get(i, j + 1) + phi2_pintgr.get(i + 1, j + 1));
             }
         }
 
@@ -2517,8 +2518,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         for (i = 0; i <= isiz2 + 1; i++) {
             for (k = 0; k <= isiz3 + 1; k++) {
-                phi1.set(i, k, 0);
-                phi2.set(i, k, 0);
+                phi1_pintgr.set(i, k, 0);
+                phi2_pintgr.set(i, k, 0);
             }
         }
         jglob = jpt + jbeg;
@@ -2528,7 +2529,7 @@ public class LU extends LUBase {
             for (k = ki1; k <= ki2; k++) {
                 for (i = ibeg; i <= ifin; i++) {
                     iglob = ipt + i;
-                    phi1.set(i, k, c2 * (u.get(5, i, jbeg, k) - 0.50e+00 * (u.get(2, i, jbeg, k) * u.get(2, i, jbeg, k)
+                    phi1_pintgr.set(i, k, c2 * (u.get(5, i, jbeg, k) - 0.50e+00 * (u.get(2, i, jbeg, k) * u.get(2, i, jbeg, k)
                             + u.get(3, i, jbeg, k) * u.get(3, i, jbeg, k) + u.get(4, i, jbeg, k) * u.get(4, i, jbeg, k))
                             / u.get(1, i, jbeg, k)));
                 }
@@ -2542,7 +2543,7 @@ public class LU extends LUBase {
             for (k = ki1; k <= ki2; k++) {
                 for (i = ibeg; i <= ifin; i++) {
                     iglob = ipt + i;
-                    phi2.set(i, k, c2 * (u.get(5, i, jfin, k) - 0.50e+00 * (u.get(2, i, jfin, k) * u.get(2, i, jfin, k)
+                    phi2_pintgr.set(i, k, c2 * (u.get(5, i, jfin, k) - 0.50e+00 * (u.get(2, i, jfin, k) * u.get(2, i, jfin, k)
                             + u.get(3, i, jfin, k) * u.get(3, i, jfin, k) + u.get(4, i, jfin, k) * u.get(4, i, jfin, k))
                             / u.get(1, i, jfin, k)));
                 }
@@ -2553,17 +2554,17 @@ public class LU extends LUBase {
         // c communicate in i direction
         // c---------------------------------------------------------------------
         if (ind1 == 1) {
-            exchange_5(phi1, ibeg, ifin1);
+            exchange_5(phi1_pintgr, ibeg, ifin1);
         }
         if (ind2 == 1) {
-            exchange_5(phi2, ibeg, ifin1);
+            exchange_5(phi2_pintgr, ibeg, ifin1);
         }
 
         frc2 = 0.0e+00;
         for (k = ki1; k <= ki2 - 1; k++) {
             for (i = ibeg; i <= ifin1; i++) {
-                frc2 = frc2 + (phi1.get(i, k) + phi1.get(i + 1, k) + phi1.get(i, k + 1) + phi1.get(i + 1, k + 1)
-                        + phi2.get(i, k) + phi2.get(i + 1, k) + phi2.get(i, k + 1) + phi2.get(i + 1, k + 1));
+                frc2 = frc2 + (phi1_pintgr.get(i, k) + phi1_pintgr.get(i + 1, k) + phi1_pintgr.get(i, k + 1) + phi1_pintgr.get(i + 1, k + 1)
+                        + phi2_pintgr.get(i, k) + phi2_pintgr.get(i + 1, k) + phi2_pintgr.get(i, k + 1) + phi2_pintgr.get(i + 1, k + 1));
             }
         }
 
@@ -2580,8 +2581,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         for (i = 0; i <= isiz2 + 1; i++) {
             for (k = 0; k <= isiz3 + 1; k++) {
-                phi1.set(i, k, 0);
-                phi2.set(i, k, 0);
+                phi1_pintgr.set(i, k, 0);
+                phi2_pintgr.set(i, k, 0);
             }
         }
         iglob = ipt + ibeg;
@@ -2591,7 +2592,7 @@ public class LU extends LUBase {
             for (k = ki1; k <= ki2; k++) {
                 for (j = jbeg; j <= jfin; j++) {
                     jglob = jpt + j;
-                    phi1.set(j, k, c2 * (u.get(5, ibeg, j, k) - 0.50e+00 * (u.get(2, ibeg, j, k) * u.get(2, ibeg, j, k)
+                    phi1_pintgr.set(j, k, c2 * (u.get(5, ibeg, j, k) - 0.50e+00 * (u.get(2, ibeg, j, k) * u.get(2, ibeg, j, k)
                             + u.get(3, ibeg, j, k) * u.get(3, ibeg, j, k) + u.get(4, ibeg, j, k) * u.get(4, ibeg, j, k))
                             / u.get(1, ibeg, j, k)));
                 }
@@ -2605,7 +2606,7 @@ public class LU extends LUBase {
             for (k = ki1; k <= ki2; k++) {
                 for (j = jbeg; j <= jfin; j++) {
                     jglob = jpt + j;
-                    phi2.set(j, k, c2 * (u.get(5, ifin, j, k) - 0.50e+00 * (u.get(2, ifin, j, k) * u.get(2, ifin, j, k)
+                    phi2_pintgr.set(j, k, c2 * (u.get(5, ifin, j, k) - 0.50e+00 * (u.get(2, ifin, j, k) * u.get(2, ifin, j, k)
                             + u.get(3, ifin, j, k) * u.get(3, ifin, j, k) + u.get(4, ifin, j, k) * u.get(4, ifin, j, k))
                             / u.get(1, ifin, j, k)));
                 }
@@ -2616,18 +2617,18 @@ public class LU extends LUBase {
         // c communicate in j direction
         // c---------------------------------------------------------------------
         if (ind1 == 1) {
-            exchange_6(phi1, jbeg, jfin1);
+            exchange_6(phi1_pintgr, jbeg, jfin1);
         }
         if (ind2 == 1) {
-            exchange_6(phi2, jbeg, jfin1);
+            exchange_6(phi2_pintgr, jbeg, jfin1);
         }
 
         frc3 = 0.0e+00;
 
         for (k = ki1; k <= ki2 - 1; k++) {
             for (j = jbeg; j <= jfin1; j++) {
-                frc3 = frc3 + (phi1.get(j, k) + phi1.get(j + 1, k) + phi1.get(j, k + 1) + phi1.get(j + 1, k + 1)
-                        + phi2.get(j, k) + phi2.get(j + 1, k) + phi2.get(j, k + 1) + phi2.get(j + 1, k + 1));
+                frc3 = frc3 + (phi1_pintgr.get(j, k) + phi1_pintgr.get(j + 1, k) + phi1_pintgr.get(j, k + 1) + phi1_pintgr.get(j + 1, k + 1)
+                        + phi2_pintgr.get(j, k) + phi2_pintgr.get(j + 1, k) + phi2_pintgr.get(j, k + 1) + phi2_pintgr.get(j + 1, k + 1));
             }
         }
 
