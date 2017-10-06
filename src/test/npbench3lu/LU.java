@@ -3925,6 +3925,7 @@ public class LU extends LUBase {
     // c to perform pseudo-time stepping SSOR iterations
     // c for five nonlinear pde's.
     // c---------------------------------------------------------------------
+    protected final Array3Ddouble tv_ssor = new Array3Ddouble(5, isiz1, isiz2);
 
     public double ssor() {
 
@@ -3935,7 +3936,6 @@ public class LU extends LUBase {
         int istep;
         double tmp;
         Array1Ddouble delunm = new Array1Ddouble(5);
-        Array3Ddouble tv = new Array3Ddouble(5, isiz1, isiz2);
 
         // external timer_read;
         double wtime;
@@ -4068,7 +4068,7 @@ public class LU extends LUBase {
                 // c---------------------------------------------------------------------
                 // c perform the upper triangular solution
                 // c---------------------------------------------------------------------
-                buts(isiz1, isiz2, isiz3, nx, ny, nz, k, omega, rsd, tv, d, a, b, c, ist, iend, jst, jend, nx0, ny0,
+                buts(isiz1, isiz2, isiz3, nx, ny, nz, k, omega, rsd, tv_ssor, d, a, b, c, ist, iend, jst, jend, nx0, ny0,
                         ipt, jpt);
             }
 

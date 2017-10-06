@@ -1,5 +1,9 @@
 package npbench3lu.arrayXD;
 
+import javassist.offload.Inline;
+import javassist.offload.lib.DoubleArray;
+import npbench3lu.LUBase;
+
 public class Array3Ddouble {
 	final protected int beginX;
 	final protected int beginY;
@@ -10,7 +14,7 @@ public class Array3Ddouble {
 	final protected int sizeX;
 	final protected int sizeY;
 	final protected int sizeZ;
-	final protected double data[];
+	final protected DoubleArray data;
 
     public Array3Ddouble(int sx, int sy, int sz) {
         sizeX = sx;
@@ -22,7 +26,8 @@ public class Array3Ddouble {
         endX = sx;
         endY = sy;
         endZ = sz;
-        data = new double[sx * sy * sz];
+        // data = new double[sx * sy * sz];
+        data = new DoubleArray(sx * sy * sz, !LUBase.inJava);
     }
 
     public Array3Ddouble(int bx, int ex, int by, int ey, int bz, int ez) {
@@ -35,14 +40,14 @@ public class Array3Ddouble {
         endX = ex;
         endY = ey;
         endZ = ez;
-        data = new double[sizeX * sizeY * sizeZ];
+        data = new DoubleArray(sizeX * sizeY * sizeZ, !LUBase.inJava);
     }
 
-    public void set(int x, int y, int z, double value) {
-        data[(x - beginX) + (y - beginY) * sizeX + (z - beginZ) * sizeX * sizeY] = value;
+    @Inline public void set(int x, int y, int z, double value) {
+        data.set((x - beginX) + (y - beginY) * sizeX + (z - beginZ) * sizeX * sizeY, value);
     }
 
-    public double get(int x, int y, int z) {
-        return data[(x - beginX) + (y - beginY) * sizeX + (z - beginZ) * sizeX * sizeY];
+    @Inline public double get(int x, int y, int z) {
+        return data.get((x - beginX) + (y - beginY) * sizeX + (z - beginZ) * sizeX * sizeY);
     }
 }
