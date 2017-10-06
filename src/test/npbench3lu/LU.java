@@ -54,6 +54,7 @@ import javassist.offload.Options;
 import javassist.offload.javatoc.DriverException;
 import javassist.offload.lib.MPI;
 import javassist.offload.lib.MPIDriver;
+import javassist.offload.lib.Unsafe;
 import javassist.offload.lib.Util;
 import npbench3lu.arrayXD.*;
 
@@ -356,6 +357,7 @@ public class LU extends LUBase {
     // c v <-- ( L-inv ) * v
     // c
     // c---------------------------------------------------------------------
+    protected final Array2Ddouble tmat_blts = new Array2Ddouble(5, 5);
 
     public void blts(int ldmx, int ldmy, int ldmz, int nx, int ny, int nz, int k, double omega, Array4Ddouble v,
             Array4Ddouble ldz, Array4Ddouble ldy, Array4Ddouble ldx, Array4Ddouble d, int ist, int iend, int jst,
@@ -367,7 +369,6 @@ public class LU extends LUBase {
         int i, j, m;
         int iex;
         double tmp, tmp1;
-        Array2Ddouble tmat = new Array2Ddouble(5, 5);
 
         // c---------------------------------------------------------------------
         // c receive data from north and west
@@ -417,97 +418,97 @@ public class LU extends LUBase {
                 // c forward elimination
                 // c---------------------------------------------------------------------
                 for (m = 1; m <= 5; m++) {
-                    tmat.set(m, 1, d.get(m, 1, i, j));
-                    tmat.set(m, 2, d.get(m, 2, i, j));
-                    tmat.set(m, 3, d.get(m, 3, i, j));
-                    tmat.set(m, 4, d.get(m, 4, i, j));
-                    tmat.set(m, 5, d.get(m, 5, i, j));
+                    tmat_blts.set(m, 1, d.get(m, 1, i, j));
+                    tmat_blts.set(m, 2, d.get(m, 2, i, j));
+                    tmat_blts.set(m, 3, d.get(m, 3, i, j));
+                    tmat_blts.set(m, 4, d.get(m, 4, i, j));
+                    tmat_blts.set(m, 5, d.get(m, 5, i, j));
                 }
 
-                tmp1 = 1.0e+00 / tmat.get(1, 1);
-                tmp = tmp1 * tmat.get(2, 1);
-                tmat.set(2, 2, tmat.get(2, 2) - tmp * tmat.get(1, 2));
-                tmat.set(2, 3, tmat.get(2, 3) - tmp * tmat.get(1, 3));
-                tmat.set(2, 4, tmat.get(2, 4) - tmp * tmat.get(1, 4));
-                tmat.set(2, 5, tmat.get(2, 5) - tmp * tmat.get(1, 5));
+                tmp1 = 1.0e+00 / tmat_blts.get(1, 1);
+                tmp = tmp1 * tmat_blts.get(2, 1);
+                tmat_blts.set(2, 2, tmat_blts.get(2, 2) - tmp * tmat_blts.get(1, 2));
+                tmat_blts.set(2, 3, tmat_blts.get(2, 3) - tmp * tmat_blts.get(1, 3));
+                tmat_blts.set(2, 4, tmat_blts.get(2, 4) - tmp * tmat_blts.get(1, 4));
+                tmat_blts.set(2, 5, tmat_blts.get(2, 5) - tmp * tmat_blts.get(1, 5));
                 v.set(2, i, j, k, v.get(2, i, j, k) - v.get(1, i, j, k) * tmp);
 
-                tmp = tmp1 * tmat.get(3, 1);
-                tmat.set(3, 2, tmat.get(3, 2) - tmp * tmat.get(1, 2));
-                tmat.set(3, 3, tmat.get(3, 3) - tmp * tmat.get(1, 3));
-                tmat.set(3, 4, tmat.get(3, 4) - tmp * tmat.get(1, 4));
-                tmat.set(3, 5, tmat.get(3, 5) - tmp * tmat.get(1, 5));
+                tmp = tmp1 * tmat_blts.get(3, 1);
+                tmat_blts.set(3, 2, tmat_blts.get(3, 2) - tmp * tmat_blts.get(1, 2));
+                tmat_blts.set(3, 3, tmat_blts.get(3, 3) - tmp * tmat_blts.get(1, 3));
+                tmat_blts.set(3, 4, tmat_blts.get(3, 4) - tmp * tmat_blts.get(1, 4));
+                tmat_blts.set(3, 5, tmat_blts.get(3, 5) - tmp * tmat_blts.get(1, 5));
                 v.set(3, i, j, k, v.get(3, i, j, k) - v.get(1, i, j, k) * tmp);
 
-                tmp = tmp1 * tmat.get(4, 1);
-                tmat.set(4, 2, tmat.get(4, 2) - tmp * tmat.get(1, 2));
-                tmat.set(4, 3, tmat.get(4, 3) - tmp * tmat.get(1, 3));
-                tmat.set(4, 4, tmat.get(4, 4) - tmp * tmat.get(1, 4));
-                tmat.set(4, 5, tmat.get(4, 5) - tmp * tmat.get(1, 5));
+                tmp = tmp1 * tmat_blts.get(4, 1);
+                tmat_blts.set(4, 2, tmat_blts.get(4, 2) - tmp * tmat_blts.get(1, 2));
+                tmat_blts.set(4, 3, tmat_blts.get(4, 3) - tmp * tmat_blts.get(1, 3));
+                tmat_blts.set(4, 4, tmat_blts.get(4, 4) - tmp * tmat_blts.get(1, 4));
+                tmat_blts.set(4, 5, tmat_blts.get(4, 5) - tmp * tmat_blts.get(1, 5));
                 v.set(4, i, j, k, v.get(4, i, j, k) - v.get(1, i, j, k) * tmp);
 
-                tmp = tmp1 * tmat.get(5, 1);
-                tmat.set(5, 2, tmat.get(5, 2) - tmp * tmat.get(1, 2));
-                tmat.set(5, 3, tmat.get(5, 3) - tmp * tmat.get(1, 3));
-                tmat.set(5, 4, tmat.get(5, 4) - tmp * tmat.get(1, 4));
-                tmat.set(5, 5, tmat.get(5, 5) - tmp * tmat.get(1, 5));
+                tmp = tmp1 * tmat_blts.get(5, 1);
+                tmat_blts.set(5, 2, tmat_blts.get(5, 2) - tmp * tmat_blts.get(1, 2));
+                tmat_blts.set(5, 3, tmat_blts.get(5, 3) - tmp * tmat_blts.get(1, 3));
+                tmat_blts.set(5, 4, tmat_blts.get(5, 4) - tmp * tmat_blts.get(1, 4));
+                tmat_blts.set(5, 5, tmat_blts.get(5, 5) - tmp * tmat_blts.get(1, 5));
                 v.set(5, i, j, k, v.get(5, i, j, k) - v.get(1, i, j, k) * tmp);
 
-                tmp1 = 1.0e+00 / tmat.get(2, 2);
-                tmp = tmp1 * tmat.get(3, 2);
-                tmat.set(3, 3, tmat.get(3, 3) - tmp * tmat.get(2, 3));
-                tmat.set(3, 4, tmat.get(3, 4) - tmp * tmat.get(2, 4));
-                tmat.set(3, 5, tmat.get(3, 5) - tmp * tmat.get(2, 5));
+                tmp1 = 1.0e+00 / tmat_blts.get(2, 2);
+                tmp = tmp1 * tmat_blts.get(3, 2);
+                tmat_blts.set(3, 3, tmat_blts.get(3, 3) - tmp * tmat_blts.get(2, 3));
+                tmat_blts.set(3, 4, tmat_blts.get(3, 4) - tmp * tmat_blts.get(2, 4));
+                tmat_blts.set(3, 5, tmat_blts.get(3, 5) - tmp * tmat_blts.get(2, 5));
                 v.set(3, i, j, k, v.get(3, i, j, k) - v.get(2, i, j, k) * tmp);
 
-                tmp = tmp1 * tmat.get(4, 2);
-                tmat.set(4, 3, tmat.get(4, 3) - tmp * tmat.get(2, 3));
-                tmat.set(4, 4, tmat.get(4, 4) - tmp * tmat.get(2, 4));
-                tmat.set(4, 5, tmat.get(4, 5) - tmp * tmat.get(2, 5));
+                tmp = tmp1 * tmat_blts.get(4, 2);
+                tmat_blts.set(4, 3, tmat_blts.get(4, 3) - tmp * tmat_blts.get(2, 3));
+                tmat_blts.set(4, 4, tmat_blts.get(4, 4) - tmp * tmat_blts.get(2, 4));
+                tmat_blts.set(4, 5, tmat_blts.get(4, 5) - tmp * tmat_blts.get(2, 5));
                 v.set(4, i, j, k, v.get(4, i, j, k) - v.get(2, i, j, k) * tmp);
 
-                tmp = tmp1 * tmat.get(5, 2);
-                tmat.set(5, 3, tmat.get(5, 3) - tmp * tmat.get(2, 3));
-                tmat.set(5, 4, tmat.get(5, 4) - tmp * tmat.get(2, 4));
-                tmat.set(5, 5, tmat.get(5, 5) - tmp * tmat.get(2, 5));
+                tmp = tmp1 * tmat_blts.get(5, 2);
+                tmat_blts.set(5, 3, tmat_blts.get(5, 3) - tmp * tmat_blts.get(2, 3));
+                tmat_blts.set(5, 4, tmat_blts.get(5, 4) - tmp * tmat_blts.get(2, 4));
+                tmat_blts.set(5, 5, tmat_blts.get(5, 5) - tmp * tmat_blts.get(2, 5));
                 v.set(5, i, j, k, v.get(5, i, j, k) - v.get(2, i, j, k) * tmp);
 
-                tmp1 = 1.0e+00 / tmat.get(3, 3);
-                tmp = tmp1 * tmat.get(4, 3);
-                tmat.set(4, 4, tmat.get(4, 4) - tmp * tmat.get(3, 4));
-                tmat.set(4, 5, tmat.get(4, 5) - tmp * tmat.get(3, 5));
+                tmp1 = 1.0e+00 / tmat_blts.get(3, 3);
+                tmp = tmp1 * tmat_blts.get(4, 3);
+                tmat_blts.set(4, 4, tmat_blts.get(4, 4) - tmp * tmat_blts.get(3, 4));
+                tmat_blts.set(4, 5, tmat_blts.get(4, 5) - tmp * tmat_blts.get(3, 5));
                 v.set(4, i, j, k, v.get(4, i, j, k) - v.get(3, i, j, k) * tmp);
 
-                tmp = tmp1 * tmat.get(5, 3);
-                tmat.set(5, 4, tmat.get(5, 4) - tmp * tmat.get(3, 4));
-                tmat.set(5, 5, tmat.get(5, 5) - tmp * tmat.get(3, 5));
+                tmp = tmp1 * tmat_blts.get(5, 3);
+                tmat_blts.set(5, 4, tmat_blts.get(5, 4) - tmp * tmat_blts.get(3, 4));
+                tmat_blts.set(5, 5, tmat_blts.get(5, 5) - tmp * tmat_blts.get(3, 5));
                 v.set(5, i, j, k, v.get(5, i, j, k) - v.get(3, i, j, k) * tmp);
 
-                tmp1 = 1.0e+00 / tmat.get(4, 4);
-                tmp = tmp1 * tmat.get(5, 4);
-                tmat.set(5, 5, tmat.get(5, 5) - tmp * tmat.get(4, 5));
+                tmp1 = 1.0e+00 / tmat_blts.get(4, 4);
+                tmp = tmp1 * tmat_blts.get(5, 4);
+                tmat_blts.set(5, 5, tmat_blts.get(5, 5) - tmp * tmat_blts.get(4, 5));
                 v.set(5, i, j, k, v.get(5, i, j, k) - v.get(4, i, j, k) * tmp);
 
                 // c---------------------------------------------------------------------
                 // c back substitution
                 // c---------------------------------------------------------------------
-                v.set(5, i, j, k, v.get(5, i, j, k) / tmat.get(5, 5));
+                v.set(5, i, j, k, v.get(5, i, j, k) / tmat_blts.get(5, 5));
 
-                v.set(4, i, j, k, v.get(4, i, j, k) - tmat.get(4, 5) * v.get(5, i, j, k));
-                v.set(4, i, j, k, v.get(4, i, j, k) / tmat.get(4, 4));
+                v.set(4, i, j, k, v.get(4, i, j, k) - tmat_blts.get(4, 5) * v.get(5, i, j, k));
+                v.set(4, i, j, k, v.get(4, i, j, k) / tmat_blts.get(4, 4));
 
                 v.set(3, i, j, k,
-                        v.get(3, i, j, k) - tmat.get(3, 4) * v.get(4, i, j, k) - tmat.get(3, 5) * v.get(5, i, j, k));
-                v.set(3, i, j, k, v.get(3, i, j, k) / tmat.get(3, 3));
+                        v.get(3, i, j, k) - tmat_blts.get(3, 4) * v.get(4, i, j, k) - tmat_blts.get(3, 5) * v.get(5, i, j, k));
+                v.set(3, i, j, k, v.get(3, i, j, k) / tmat_blts.get(3, 3));
 
-                v.set(2, i, j, k, v.get(2, i, j, k) - tmat.get(2, 3) * v.get(3, i, j, k)
-                        - tmat.get(2, 4) * v.get(4, i, j, k) - tmat.get(2, 5) * v.get(5, i, j, k));
-                v.set(2, i, j, k, v.get(2, i, j, k) / tmat.get(2, 2));
+                v.set(2, i, j, k, v.get(2, i, j, k) - tmat_blts.get(2, 3) * v.get(3, i, j, k)
+                        - tmat_blts.get(2, 4) * v.get(4, i, j, k) - tmat_blts.get(2, 5) * v.get(5, i, j, k));
+                v.set(2, i, j, k, v.get(2, i, j, k) / tmat_blts.get(2, 2));
 
                 v.set(1, i, j, k,
-                        v.get(1, i, j, k) - tmat.get(1, 2) * v.get(2, i, j, k) - tmat.get(1, 3) * v.get(3, i, j, k)
-                                - tmat.get(1, 4) * v.get(4, i, j, k) - tmat.get(1, 5) * v.get(5, i, j, k));
-                v.set(1, i, j, k, v.get(1, i, j, k) / tmat.get(1, 1));
+                        v.get(1, i, j, k) - tmat_blts.get(1, 2) * v.get(2, i, j, k) - tmat_blts.get(1, 3) * v.get(3, i, j, k)
+                                - tmat_blts.get(1, 4) * v.get(4, i, j, k) - tmat_blts.get(1, 5) * v.get(5, i, j, k));
+                v.set(1, i, j, k, v.get(1, i, j, k) / tmat_blts.get(1, 1));
 
             }
         }
@@ -531,6 +532,7 @@ public class LU extends LUBase {
     // c v <-- ( U-inv ) * v
     // c
     // c---------------------------------------------------------------------
+    protected final Array2Ddouble tmat_buts = new Array2Ddouble(5, 5);
 
     public void buts(int ldmx, int ldmy, int ldmz, int nx, int ny, int nz, int k, double omega, Array4Ddouble v,
             Array3Ddouble tv, Array4Ddouble d, Array4Ddouble udx, Array4Ddouble udy, Array4Ddouble udz, int ist,
@@ -542,7 +544,6 @@ public class LU extends LUBase {
         int i, j, m;
         int iex;
         double tmp, tmp1;
-        Array2Ddouble tmat = new Array2Ddouble(5, 5);
 
         // c---------------------------------------------------------------------
         // c receive data from south and east
@@ -577,95 +578,95 @@ public class LU extends LUBase {
                 // c diagonal block inversion
                 // c---------------------------------------------------------------------
                 for (m = 1; m <= 5; m++) {
-                    tmat.set(m, 1, d.get(m, 1, i, j));
-                    tmat.set(m, 2, d.get(m, 2, i, j));
-                    tmat.set(m, 3, d.get(m, 3, i, j));
-                    tmat.set(m, 4, d.get(m, 4, i, j));
-                    tmat.set(m, 5, d.get(m, 5, i, j));
+                    tmat_buts.set(m, 1, d.get(m, 1, i, j));
+                    tmat_buts.set(m, 2, d.get(m, 2, i, j));
+                    tmat_buts.set(m, 3, d.get(m, 3, i, j));
+                    tmat_buts.set(m, 4, d.get(m, 4, i, j));
+                    tmat_buts.set(m, 5, d.get(m, 5, i, j));
                 }
 
-                tmp1 = 1.0e+00 / tmat.get(1, 1);
-                tmp = tmp1 * tmat.get(2, 1);
-                tmat.set(2, 2, tmat.get(2, 2) - tmp * tmat.get(1, 2));
-                tmat.set(2, 3, tmat.get(2, 3) - tmp * tmat.get(1, 3));
-                tmat.set(2, 4, tmat.get(2, 4) - tmp * tmat.get(1, 4));
-                tmat.set(2, 5, tmat.get(2, 5) - tmp * tmat.get(1, 5));
+                tmp1 = 1.0e+00 / tmat_buts.get(1, 1);
+                tmp = tmp1 * tmat_buts.get(2, 1);
+                tmat_buts.set(2, 2, tmat_buts.get(2, 2) - tmp * tmat_buts.get(1, 2));
+                tmat_buts.set(2, 3, tmat_buts.get(2, 3) - tmp * tmat_buts.get(1, 3));
+                tmat_buts.set(2, 4, tmat_buts.get(2, 4) - tmp * tmat_buts.get(1, 4));
+                tmat_buts.set(2, 5, tmat_buts.get(2, 5) - tmp * tmat_buts.get(1, 5));
                 tv.set(2, i, j, tv.get(2, i, j) - tv.get(1, i, j) * tmp);
 
-                tmp = tmp1 * tmat.get(3, 1);
-                tmat.set(3, 2, tmat.get(3, 2) - tmp * tmat.get(1, 2));
-                tmat.set(3, 3, tmat.get(3, 3) - tmp * tmat.get(1, 3));
-                tmat.set(3, 4, tmat.get(3, 4) - tmp * tmat.get(1, 4));
-                tmat.set(3, 5, tmat.get(3, 5) - tmp * tmat.get(1, 5));
+                tmp = tmp1 * tmat_buts.get(3, 1);
+                tmat_buts.set(3, 2, tmat_buts.get(3, 2) - tmp * tmat_buts.get(1, 2));
+                tmat_buts.set(3, 3, tmat_buts.get(3, 3) - tmp * tmat_buts.get(1, 3));
+                tmat_buts.set(3, 4, tmat_buts.get(3, 4) - tmp * tmat_buts.get(1, 4));
+                tmat_buts.set(3, 5, tmat_buts.get(3, 5) - tmp * tmat_buts.get(1, 5));
                 tv.set(3, i, j, tv.get(3, i, j) - tv.get(1, i, j) * tmp);
 
-                tmp = tmp1 * tmat.get(4, 1);
-                tmat.set(4, 2, tmat.get(4, 2) - tmp * tmat.get(1, 2));
-                tmat.set(4, 3, tmat.get(4, 3) - tmp * tmat.get(1, 3));
-                tmat.set(4, 4, tmat.get(4, 4) - tmp * tmat.get(1, 4));
-                tmat.set(4, 5, tmat.get(4, 5) - tmp * tmat.get(1, 5));
+                tmp = tmp1 * tmat_buts.get(4, 1);
+                tmat_buts.set(4, 2, tmat_buts.get(4, 2) - tmp * tmat_buts.get(1, 2));
+                tmat_buts.set(4, 3, tmat_buts.get(4, 3) - tmp * tmat_buts.get(1, 3));
+                tmat_buts.set(4, 4, tmat_buts.get(4, 4) - tmp * tmat_buts.get(1, 4));
+                tmat_buts.set(4, 5, tmat_buts.get(4, 5) - tmp * tmat_buts.get(1, 5));
                 tv.set(4, i, j, tv.get(4, i, j) - tv.get(1, i, j) * tmp);
 
-                tmp = tmp1 * tmat.get(5, 1);
-                tmat.set(5, 2, tmat.get(5, 2) - tmp * tmat.get(1, 2));
-                tmat.set(5, 3, tmat.get(5, 3) - tmp * tmat.get(1, 3));
-                tmat.set(5, 4, tmat.get(5, 4) - tmp * tmat.get(1, 4));
-                tmat.set(5, 5, tmat.get(5, 5) - tmp * tmat.get(1, 5));
+                tmp = tmp1 * tmat_buts.get(5, 1);
+                tmat_buts.set(5, 2, tmat_buts.get(5, 2) - tmp * tmat_buts.get(1, 2));
+                tmat_buts.set(5, 3, tmat_buts.get(5, 3) - tmp * tmat_buts.get(1, 3));
+                tmat_buts.set(5, 4, tmat_buts.get(5, 4) - tmp * tmat_buts.get(1, 4));
+                tmat_buts.set(5, 5, tmat_buts.get(5, 5) - tmp * tmat_buts.get(1, 5));
                 tv.set(5, i, j, tv.get(5, i, j) - tv.get(1, i, j) * tmp);
 
-                tmp1 = 1.0e+00 / tmat.get(2, 2);
-                tmp = tmp1 * tmat.get(3, 2);
-                tmat.set(3, 3, tmat.get(3, 3) - tmp * tmat.get(2, 3));
-                tmat.set(3, 4, tmat.get(3, 4) - tmp * tmat.get(2, 4));
-                tmat.set(3, 5, tmat.get(3, 5) - tmp * tmat.get(2, 5));
+                tmp1 = 1.0e+00 / tmat_buts.get(2, 2);
+                tmp = tmp1 * tmat_buts.get(3, 2);
+                tmat_buts.set(3, 3, tmat_buts.get(3, 3) - tmp * tmat_buts.get(2, 3));
+                tmat_buts.set(3, 4, tmat_buts.get(3, 4) - tmp * tmat_buts.get(2, 4));
+                tmat_buts.set(3, 5, tmat_buts.get(3, 5) - tmp * tmat_buts.get(2, 5));
                 tv.set(3, i, j, tv.get(3, i, j) - tv.get(2, i, j) * tmp);
 
-                tmp = tmp1 * tmat.get(4, 2);
-                tmat.set(4, 3, tmat.get(4, 3) - tmp * tmat.get(2, 3));
-                tmat.set(4, 4, tmat.get(4, 4) - tmp * tmat.get(2, 4));
-                tmat.set(4, 5, tmat.get(4, 5) - tmp * tmat.get(2, 5));
+                tmp = tmp1 * tmat_buts.get(4, 2);
+                tmat_buts.set(4, 3, tmat_buts.get(4, 3) - tmp * tmat_buts.get(2, 3));
+                tmat_buts.set(4, 4, tmat_buts.get(4, 4) - tmp * tmat_buts.get(2, 4));
+                tmat_buts.set(4, 5, tmat_buts.get(4, 5) - tmp * tmat_buts.get(2, 5));
                 tv.set(4, i, j, tv.get(4, i, j) - tv.get(2, i, j) * tmp);
 
-                tmp = tmp1 * tmat.get(5, 2);
-                tmat.set(5, 3, tmat.get(5, 3) - tmp * tmat.get(2, 3));
-                tmat.set(5, 4, tmat.get(5, 4) - tmp * tmat.get(2, 4));
-                tmat.set(5, 5, tmat.get(5, 5) - tmp * tmat.get(2, 5));
+                tmp = tmp1 * tmat_buts.get(5, 2);
+                tmat_buts.set(5, 3, tmat_buts.get(5, 3) - tmp * tmat_buts.get(2, 3));
+                tmat_buts.set(5, 4, tmat_buts.get(5, 4) - tmp * tmat_buts.get(2, 4));
+                tmat_buts.set(5, 5, tmat_buts.get(5, 5) - tmp * tmat_buts.get(2, 5));
                 tv.set(5, i, j, tv.get(5, i, j) - tv.get(2, i, j) * tmp);
 
-                tmp1 = 1.0e+00 / tmat.get(3, 3);
-                tmp = tmp1 * tmat.get(4, 3);
-                tmat.set(4, 4, tmat.get(4, 4) - tmp * tmat.get(3, 4));
-                tmat.set(4, 5, tmat.get(4, 5) - tmp * tmat.get(3, 5));
+                tmp1 = 1.0e+00 / tmat_buts.get(3, 3);
+                tmp = tmp1 * tmat_buts.get(4, 3);
+                tmat_buts.set(4, 4, tmat_buts.get(4, 4) - tmp * tmat_buts.get(3, 4));
+                tmat_buts.set(4, 5, tmat_buts.get(4, 5) - tmp * tmat_buts.get(3, 5));
                 tv.set(4, i, j, tv.get(4, i, j) - tv.get(3, i, j) * tmp);
 
-                tmp = tmp1 * tmat.get(5, 3);
-                tmat.set(5, 4, tmat.get(5, 4) - tmp * tmat.get(3, 4));
-                tmat.set(5, 5, tmat.get(5, 5) - tmp * tmat.get(3, 5));
+                tmp = tmp1 * tmat_buts.get(5, 3);
+                tmat_buts.set(5, 4, tmat_buts.get(5, 4) - tmp * tmat_buts.get(3, 4));
+                tmat_buts.set(5, 5, tmat_buts.get(5, 5) - tmp * tmat_buts.get(3, 5));
                 tv.set(5, i, j, tv.get(5, i, j) - tv.get(3, i, j) * tmp);
 
-                tmp1 = 1.0e+00 / tmat.get(4, 4);
-                tmp = tmp1 * tmat.get(5, 4);
-                tmat.set(5, 5, tmat.get(5, 5) - tmp * tmat.get(4, 5));
+                tmp1 = 1.0e+00 / tmat_buts.get(4, 4);
+                tmp = tmp1 * tmat_buts.get(5, 4);
+                tmat_buts.set(5, 5, tmat_buts.get(5, 5) - tmp * tmat_buts.get(4, 5));
                 tv.set(5, i, j, tv.get(5, i, j) - tv.get(4, i, j) * tmp);
 
                 // c---------------------------------------------------------------------
                 // c back substitution
                 // c---------------------------------------------------------------------
-                tv.set(5, i, j, tv.get(5, i, j) / tmat.get(5, 5));
+                tv.set(5, i, j, tv.get(5, i, j) / tmat_buts.get(5, 5));
 
-                tv.set(4, i, j, tv.get(4, i, j) - tmat.get(4, 5) * tv.get(5, i, j));
-                tv.set(4, i, j, tv.get(4, i, j) / tmat.get(4, 4));
+                tv.set(4, i, j, tv.get(4, i, j) - tmat_buts.get(4, 5) * tv.get(5, i, j));
+                tv.set(4, i, j, tv.get(4, i, j) / tmat_buts.get(4, 4));
 
-                tv.set(3, i, j, tv.get(3, i, j) - tmat.get(3, 4) * tv.get(4, i, j) - tmat.get(3, 5) * tv.get(5, i, j));
-                tv.set(3, i, j, tv.get(3, i, j) / tmat.get(3, 3));
+                tv.set(3, i, j, tv.get(3, i, j) - tmat_buts.get(3, 4) * tv.get(4, i, j) - tmat_buts.get(3, 5) * tv.get(5, i, j));
+                tv.set(3, i, j, tv.get(3, i, j) / tmat_buts.get(3, 3));
 
-                tv.set(2, i, j, tv.get(2, i, j) - tmat.get(2, 3) * tv.get(3, i, j) - tmat.get(2, 4) * tv.get(4, i, j)
-                        - tmat.get(2, 5) * tv.get(5, i, j));
-                tv.set(2, i, j, tv.get(2, i, j) / tmat.get(2, 2));
+                tv.set(2, i, j, tv.get(2, i, j) - tmat_buts.get(2, 3) * tv.get(3, i, j) - tmat_buts.get(2, 4) * tv.get(4, i, j)
+                        - tmat_buts.get(2, 5) * tv.get(5, i, j));
+                tv.set(2, i, j, tv.get(2, i, j) / tmat_buts.get(2, 2));
 
-                tv.set(1, i, j, tv.get(1, i, j) - tmat.get(1, 2) * tv.get(2, i, j) - tmat.get(1, 3) * tv.get(3, i, j)
-                        - tmat.get(1, 4) * tv.get(4, i, j) - tmat.get(1, 5) * tv.get(5, i, j));
-                tv.set(1, i, j, tv.get(1, i, j) / tmat.get(1, 1));
+                tv.set(1, i, j, tv.get(1, i, j) - tmat_buts.get(1, 2) * tv.get(2, i, j) - tmat_buts.get(1, 3) * tv.get(3, i, j)
+                        - tmat_buts.get(1, 4) * tv.get(4, i, j) - tmat_buts.get(1, 5) * tv.get(5, i, j));
+                tv.set(1, i, j, tv.get(1, i, j) / tmat_buts.get(1, 1));
 
                 v.set(1, i, j, k, v.get(1, i, j, k) - tv.get(1, i, j));
                 v.set(2, i, j, k, v.get(2, i, j, k) - tv.get(2, i, j));
@@ -1142,12 +1143,12 @@ public class LU extends LUBase {
     }
 
     protected final MPI.Request request_exch = new MPI.Request();
+    protected final Array2Ddouble dum_exch = new Array2Ddouble(5, isiz1 + isiz2);
+    protected final Array2Ddouble dum1_exch = new Array2Ddouble(5, isiz1 + isiz2);
 
     public void exchange_1(Array4Ddouble g, int k, int iex) {
 
         int i, j;
-        Array2Ddouble dum = new Array2Ddouble(5, isiz1 + isiz2);
-        Array2Ddouble dum1 = new Array2Ddouble(5, isiz1 + isiz2);
 
         if (iex == 0) {
 
@@ -1156,17 +1157,17 @@ public class LU extends LUBase {
                 MPI.iRecv(tmp, 5 * (jend - jst + 1), north, from_n, request_exch);
                 MPI.wait(request_exch);
                 // trace_recv(tmp, 5*(jend-jst+1), north, from_n);
-                dum1.setValues(1, jst, 5 * (jend - jst + 1), tmp);
+                dum1_exch.setValues(1, jst, 5 * (jend - jst + 1), tmp);
                 // trace_recv(dum1.getData(), dum1.getDataSize(), 999, 999);
-
+                Unsafe.free(tmp);
                 // dump_array("dum1 1 ", dum1);
                 // dump_array("g", g);
                 for (j = jst; j <= jend; j++) {
-                    g.set(1, 0, j, k, dum1.get(1, j));
-                    g.set(2, 0, j, k, dum1.get(2, j));
-                    g.set(3, 0, j, k, dum1.get(3, j));
-                    g.set(4, 0, j, k, dum1.get(4, j));
-                    g.set(5, 0, j, k, dum1.get(5, j));
+                    g.set(1, 0, j, k, dum1_exch.get(1, j));
+                    g.set(2, 0, j, k, dum1_exch.get(2, j));
+                    g.set(3, 0, j, k, dum1_exch.get(3, j));
+                    g.set(4, 0, j, k, dum1_exch.get(4, j));
+                    g.set(5, 0, j, k, dum1_exch.get(5, j));
                 }
             }
 
@@ -1175,15 +1176,16 @@ public class LU extends LUBase {
                 MPI.iRecv(tmp, 5 * (iend - ist + 1), west, from_w, request_exch);
                 MPI.wait(request_exch);
                 trace_recv(tmp, 5 * (iend - ist + 1), west, from_w);
-                dum1.setValues(1, ist, 5 * (iend - ist + 1), tmp);
+                dum1_exch.setValues(1, ist, 5 * (iend - ist + 1), tmp);
+                Unsafe.free(tmp);
                 // dump_array("dum1 2 ", dum1);
                 // dump_array("g", g);
                 for (i = ist; i <= iend; i++) {
-                    g.set(1, i, 0, k, dum1.get(1, i));
-                    g.set(2, i, 0, k, dum1.get(2, i));
-                    g.set(3, i, 0, k, dum1.get(3, i));
-                    g.set(4, i, 0, k, dum1.get(4, i));
-                    g.set(5, i, 0, k, dum1.get(5, i));
+                    g.set(1, i, 0, k, dum1_exch.get(1, i));
+                    g.set(2, i, 0, k, dum1_exch.get(2, i));
+                    g.set(3, i, 0, k, dum1_exch.get(3, i));
+                    g.set(4, i, 0, k, dum1_exch.get(4, i));
+                    g.set(5, i, 0, k, dum1_exch.get(5, i));
                 }
             }
         } else if (iex == 1) {
@@ -1192,13 +1194,14 @@ public class LU extends LUBase {
                 double tmp[] = new double[5 * (jend - jst + 1)];
                 MPI.iRecv(tmp, 5 * (jend - jst + 1), south, from_s, request_exch);
                 MPI.wait(request_exch);
-                dum1.setValues(1, jst, 5 * (jend - jst + 1), tmp);
+                dum1_exch.setValues(1, jst, 5 * (jend - jst + 1), tmp);
+                Unsafe.free(tmp);
                 for (j = jst; j <= jend; j++) {
-                    g.set(1, nx + 1, j, k, dum1.get(1, j));
-                    g.set(2, nx + 1, j, k, dum1.get(2, j));
-                    g.set(3, nx + 1, j, k, dum1.get(3, j));
-                    g.set(4, nx + 1, j, k, dum1.get(4, j));
-                    g.set(5, nx + 1, j, k, dum1.get(5, j));
+                    g.set(1, nx + 1, j, k, dum1_exch.get(1, j));
+                    g.set(2, nx + 1, j, k, dum1_exch.get(2, j));
+                    g.set(3, nx + 1, j, k, dum1_exch.get(3, j));
+                    g.set(4, nx + 1, j, k, dum1_exch.get(4, j));
+                    g.set(5, nx + 1, j, k, dum1_exch.get(5, j));
                 }
             }
 
@@ -1206,13 +1209,14 @@ public class LU extends LUBase {
                 double tmp[] = new double[5 * (iend - ist + 1)];
                 MPI.iRecv(tmp, 5 * (iend - ist + 1), east, from_e, request_exch);
                 MPI.wait(request_exch);
-                dum1.setValues(1, ist, 5 * (iend - ist + 1), tmp);
+                dum1_exch.setValues(1, ist, 5 * (iend - ist + 1), tmp);
+                Unsafe.free(tmp);
                 for (i = ist; i <= iend; i++) {
-                    g.set(1, i, ny + 1, k, dum1.get(1, i));
-                    g.set(2, i, ny + 1, k, dum1.get(2, i));
-                    g.set(3, i, ny + 1, k, dum1.get(3, i));
-                    g.set(4, i, ny + 1, k, dum1.get(4, i));
-                    g.set(5, i, ny + 1, k, dum1.get(5, i));
+                    g.set(1, i, ny + 1, k, dum1_exch.get(1, i));
+                    g.set(2, i, ny + 1, k, dum1_exch.get(2, i));
+                    g.set(3, i, ny + 1, k, dum1_exch.get(3, i));
+                    g.set(4, i, ny + 1, k, dum1_exch.get(4, i));
+                    g.set(5, i, ny + 1, k, dum1_exch.get(5, i));
                 }
             }
 
@@ -1220,51 +1224,51 @@ public class LU extends LUBase {
 
             if (south != -1) {
                 for (j = jst; j <= jend; j++) {
-                    dum.set(1, j, g.get(1, nx, j, k));
-                    dum.set(2, j, g.get(2, nx, j, k));
-                    dum.set(3, j, g.get(3, nx, j, k));
-                    dum.set(4, j, g.get(4, nx, j, k));
-                    dum.set(5, j, g.get(5, nx, j, k));
+                    dum_exch.set(1, j, g.get(1, nx, j, k));
+                    dum_exch.set(2, j, g.get(2, nx, j, k));
+                    dum_exch.set(3, j, g.get(3, nx, j, k));
+                    dum_exch.set(4, j, g.get(4, nx, j, k));
+                    dum_exch.set(5, j, g.get(5, nx, j, k));
                 }
-                MPI.send(dum.getData(), dum.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
-                trace_send(dum.getData(), dum.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
+                MPI.send(dum_exch.getData(), dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
+                trace_send(dum_exch.getData(), dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
             }
 
             if (east != -1) {
                 for (i = ist; i <= iend; i++) {
-                    dum.set(1, i, g.get(1, i, ny, k));
-                    dum.set(2, i, g.get(2, i, ny, k));
-                    dum.set(3, i, g.get(3, i, ny, k));
-                    dum.set(4, i, g.get(4, i, ny, k));
-                    dum.set(5, i, g.get(5, i, ny, k));
+                    dum_exch.set(1, i, g.get(1, i, ny, k));
+                    dum_exch.set(2, i, g.get(2, i, ny, k));
+                    dum_exch.set(3, i, g.get(3, i, ny, k));
+                    dum_exch.set(4, i, g.get(4, i, ny, k));
+                    dum_exch.set(5, i, g.get(5, i, ny, k));
                 }
-                MPI.send(dum.getData(), dum.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
-                trace_send(dum.getData(), dum.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
+                MPI.send(dum_exch.getData(), dum_exch.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
+                trace_send(dum_exch.getData(), dum_exch.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
             }
 
         } else {
 
             if (north != -1) {
                 for (j = jst; j <= jend; j++) {
-                    dum.set(1, j, g.get(1, 1, j, k));
-                    dum.set(2, j, g.get(2, 1, j, k));
-                    dum.set(3, j, g.get(3, 1, j, k));
-                    dum.set(4, j, g.get(4, 1, j, k));
-                    dum.set(5, j, g.get(5, 1, j, k));
+                    dum_exch.set(1, j, g.get(1, 1, j, k));
+                    dum_exch.set(2, j, g.get(2, 1, j, k));
+                    dum_exch.set(3, j, g.get(3, 1, j, k));
+                    dum_exch.set(4, j, g.get(4, 1, j, k));
+                    dum_exch.set(5, j, g.get(5, 1, j, k));
                 }
-                MPI.send(dum.getData(), dum.getIndex(1, jst), 5 * (jend - jst + 1), north, from_s);
+                MPI.send(dum_exch.getData(), dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), north, from_s);
             }
 
             if (west != -1) {
                 for (i = ist; i <= iend; i++) {
-                    dum.set(1, i, g.get(1, i, 1, k));
-                    dum.set(2, i, g.get(2, i, 1, k));
-                    dum.set(3, i, g.get(3, i, 1, k));
-                    dum.set(4, i, g.get(4, i, 1, k));
-                    dum.set(5, i, g.get(5, i, 1, k));
+                    dum_exch.set(1, i, g.get(1, i, 1, k));
+                    dum_exch.set(2, i, g.get(2, i, 1, k));
+                    dum_exch.set(3, i, g.get(3, i, 1, k));
+                    dum_exch.set(4, i, g.get(4, i, 1, k));
+                    dum_exch.set(5, i, g.get(5, i, 1, k));
                 }
-                int offset = dum.getIndex(1, ist);
-                MPI.send(dum.getData(), offset, 5 * (iend - ist + 1), west, from_e);
+                int offset = dum_exch.getIndex(1, ist);
+                MPI.send(dum_exch.getData(), offset, 5 * (iend - ist + 1), west, from_e);
             }
 
         }
@@ -1283,9 +1287,8 @@ public class LU extends LUBase {
         // MPI.Request request_exch = new MPI.Request();
         // Util.printer.p("[").p(id).p("] nsew
         // ").p(north).p(south).p(east).p(west).ln();
-
+        double tmp[] = new double[buf1.getDataSize()];
         if (iex == 0) {
-            double tmp[] = new double[buf1.getDataSize()];
 
             // c---------------------------------------------------------------------
             // c communicate in the south and north directions
@@ -1406,8 +1409,6 @@ public class LU extends LUBase {
 
         } else {
 
-            double tmp[] = new double[buf1.getDataSize()];
-
             // c---------------------------------------------------------------------
             // c communicate in the east and west directions
             // c---------------------------------------------------------------------
@@ -1521,6 +1522,7 @@ public class LU extends LUBase {
 
         }
 
+        Unsafe.free(tmp);
     }
 
     // c---------------------------------------------------------------------
@@ -1558,7 +1560,7 @@ public class LU extends LUBase {
                 g.set(i, ny + 1, dum_exch4.get(i));
                 h.set(i, ny + 1, dum_exch4.get(i + nx));
             }
-
+            Unsafe.free(tmp);
         }
 
         // c---------------------------------------------------------------------
@@ -1590,7 +1592,7 @@ public class LU extends LUBase {
                 g.set(nx + 1, j, dum_exch4.get(j + 1));
                 h.set(nx + 1, j, dum_exch4.get(j + ny2 + 1));
             }
-
+            Unsafe.free(tmp);
         }
 
         // c---------------------------------------------------------------------
@@ -1639,6 +1641,7 @@ public class LU extends LUBase {
                 g.set(nx + 1, k, dum_exch4.get(k));
             }
 
+            Unsafe.free(tmp);
         }
 
         // c---------------------------------------------------------------------
@@ -1687,6 +1690,7 @@ public class LU extends LUBase {
                 g.set(ny + 1, k, dum_exch4.get(k));
             }
 
+            Unsafe.free(tmp);
         }
 
         // c---------------------------------------------------------------------
@@ -1748,7 +1752,7 @@ public class LU extends LUBase {
 
         MPI.allReduce_sum(dummy_error.getData(), result);
         errnm.setData(result);
-
+        Unsafe.free(result);
         for (m = 1; m <= 5; m++) {
             errnm.set(m, Util.sqrt(errnm.get(m) / ((nx0 - 2) * (ny0 - 2) * (nz0 - 2))));
         }
@@ -2401,6 +2405,8 @@ public class LU extends LUBase {
         }
 
         sum.setData(tmp);
+        Unsafe.free(tmp);
+        Unsafe.free(dummy);
     }
 
     public void pintgr() {
@@ -2792,6 +2798,15 @@ public class LU extends LUBase {
             ny0 = buf_ny0[0];
             nz0 = buf_nz0[0];
         }
+
+        Unsafe.free(buf_ipr);
+        Unsafe.free(buf_inorm);
+        Unsafe.free(buf_itmax);
+        Unsafe.free(buf_dt);
+        Unsafe.free(buf_omega);
+        Unsafe.free(buf_nx0);
+        Unsafe.free(buf_ny0);
+        Unsafe.free(buf_nz0);
     }
 
     // c---------------------------------------------------------------------
