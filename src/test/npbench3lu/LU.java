@@ -1176,8 +1176,8 @@ public class LU extends LUBase {
                 MPI.wait(request_exch);
                 trace_recv(tmp, 5 * (iend - ist + 1), west, from_w);
                 dum1.setValues(1, ist, 5 * (iend - ist + 1), tmp);
-                dump_array("dum1 2 ", dum1);
-                dump_array("g", g);
+                // dump_array("dum1 2 ", dum1);
+                // dump_array("g", g);
                 for (i = ist; i <= iend; i++) {
                     g.set(1, i, 0, k, dum1.get(1, i));
                     g.set(2, i, 0, k, dum1.get(2, i));
