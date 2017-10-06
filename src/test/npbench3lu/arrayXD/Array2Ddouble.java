@@ -1,6 +1,9 @@
 package npbench3lu.arrayXD;
 
+import javassist.offload.Inline;
+import javassist.offload.lib.DoubleArray;
 import javassist.offload.lib.MPI;
+import npbench3lu.LUBase;
 
 public class Array2Ddouble {
 	final protected int beginX;
@@ -9,7 +12,7 @@ public class Array2Ddouble {
 	final protected int endY;
 	final protected int sizeX;
 	final protected int sizeY;
-	final protected double data[];
+	final protected DoubleArray data;
 
     public Array2Ddouble(int sx, int sy) {
         sizeX = sx;
@@ -18,7 +21,8 @@ public class Array2Ddouble {
         beginY = 1;
         endX = sx;
         endY = sy;
-        data = new double[sx * sy];
+        // data = new double[sx * sy];
+        data = new DoubleArray(sx * sy, !LUBase.inJava);
     }
 
     public Array2Ddouble(int bx, int ex, int by, int ey) {
@@ -28,62 +32,32 @@ public class Array2Ddouble {
         beginY = by;
         endX = ex;
         endY = ey;
-        data = new double[sizeX * sizeY];
+        data = new DoubleArray(sizeX * sizeY, !LUBase.inJava);
     }
 
-    public void set(int x, int y, double value) {
-        data[(x - beginX) + (y - beginY) * sizeX] = value;
+    @Inline public void set(int x, int y, double value) {
+        data.set((x - beginX) + (y - beginY) * sizeX, value);
     }
 
-    public double get(int x, int y) {
-        return data[(x - beginX) + (y - beginY) * sizeX];
-    }
-
-    private double[] getData() {
-        return data;
+    @Inline public double get(int x, int y) {
+        return data.get((x - beginX) + (y - beginY) * sizeX);
     }
 
     public int getDataSize() {
         return sizeX * sizeY;
     }
 
-    public void setData(double[] values) {
-        // data = (double[])values.clone();
-        //data = new double[values.length];
-        for (int i = 0; i < values.length; i++) {
-            data[i] = values[i];
-        }
-    }
-
     public void mpiIRecv(int x, int y, int length, int src, int tag, MPI.Request req) {
         int offset = (x - beginX) + (y - beginY) * sizeX;
-        MPI.iRecv(data, offset, length, src, tag, req);
+        MPI.iRecvC(data.toCArray(), offset, length, src, tag, req);
     }
 
     public void mpiIRecv(int length, int src, int tag, MPI.Request req) {
-        MPI.iRecv(data, length, src, tag, req);
+        MPI.iRecvC(data.toCArray(), 0, length, src, tag, req);
     }
 
     public void mpiSend(int offset, int length, int dest, int tag) {
-        MPI.send(data, offset, length, dest, tag);
-    }
-
-    public void setValues(int x, int y, int length, double[] values) {
-        int idx = (x - beginX) + (y - beginY) * sizeX;
-        int j = 0;
-        for (int i = idx; i < idx + length; i++) {
-            data[i] = values[j++];
-        }
-    }
-
-    public double[] getValues(int x, int y, int length) {
-        double[] tmp = new double[length];
-        int idx = (x - beginX) + (y - beginY) * sizeX;
-        int j = 0;
-        for (int i = idx; i < length; i++) {
-            tmp[j++] = data[i];
-        }
-        return tmp;
+        MPI.sendC(data.toCArray(), offset, length, dest, tag);
     }
 
     public int getIndex(int x, int y) {
