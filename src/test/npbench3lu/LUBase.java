@@ -46,6 +46,8 @@ import npbench3lu.arrayXD.*;
 
 public class LUBase implements Cloneable {
 
+    public static boolean inJava = false;
+
     // ---------------------------------------------------------------------
     // See nbpparams.h
     // ---------------------------------------------------------------------
