@@ -1,5 +1,7 @@
 package npbench3lu.arrayXD;
 
+import javassist.offload.lib.MPI;
+
 public class Array2Ddouble {
 	final protected int beginX;
 	final protected int beginY;
@@ -51,6 +53,11 @@ public class Array2Ddouble {
         for (int i = 0; i < values.length; i++) {
             data[i] = values[i];
         }
+    }
+
+    public void mpiIRecv(int x, int y, int length, int src, int tag, MPI.Request req) {
+        int offset = (x - beginX) + (y - beginY) * sizeX;
+        MPI.iRecv(data, offset, length, src, tag, req);
     }
 
     public void setValues(int x, int y, int length, double[] values) {

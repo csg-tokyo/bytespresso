@@ -1153,13 +1153,9 @@ public class LU extends LUBase {
         if (iex == 0) {
 
             if (north != -1) {
-                double tmp[] = new double[5 * (jend - jst + 1)];
-                MPI.iRecv(tmp, 5 * (jend - jst + 1), north, from_n, request_exch);
+                dum1_exch.mpiIRecv(1, jst, 5 * (jend - jst + 1), north, from_n, request_exch);
                 MPI.wait(request_exch);
-                // trace_recv(tmp, 5*(jend-jst+1), north, from_n);
-                dum1_exch.setValues(1, jst, 5 * (jend - jst + 1), tmp);
-                // trace_recv(dum1.getData(), dum1.getDataSize(), 999, 999);
-                Unsafe.free(tmp);
+
                 // dump_array("dum1 1 ", dum1);
                 // dump_array("g", g);
                 for (j = jst; j <= jend; j++) {
@@ -1172,12 +1168,9 @@ public class LU extends LUBase {
             }
 
             if (west != -1) {
-                double tmp[] = new double[5 * (iend - ist + 1)];
-                MPI.iRecv(tmp, 5 * (iend - ist + 1), west, from_w, request_exch);
+                dum1_exch.mpiIRecv(1, ist, 5 * (iend - ist + 1), west, from_w, request_exch);
                 MPI.wait(request_exch);
-                trace_recv(tmp, 5 * (iend - ist + 1), west, from_w);
-                dum1_exch.setValues(1, ist, 5 * (iend - ist + 1), tmp);
-                Unsafe.free(tmp);
+
                 // dump_array("dum1 2 ", dum1);
                 // dump_array("g", g);
                 for (i = ist; i <= iend; i++) {
@@ -1191,11 +1184,9 @@ public class LU extends LUBase {
         } else if (iex == 1) {
 
             if (south != -1) {
-                double tmp[] = new double[5 * (jend - jst + 1)];
-                MPI.iRecv(tmp, 5 * (jend - jst + 1), south, from_s, request_exch);
+                dum1_exch.mpiIRecv(1, jst, 5 * (jend - jst + 1), south, from_s, request_exch);
                 MPI.wait(request_exch);
-                dum1_exch.setValues(1, jst, 5 * (jend - jst + 1), tmp);
-                Unsafe.free(tmp);
+
                 for (j = jst; j <= jend; j++) {
                     g.set(1, nx + 1, j, k, dum1_exch.get(1, j));
                     g.set(2, nx + 1, j, k, dum1_exch.get(2, j));
@@ -1206,11 +1197,9 @@ public class LU extends LUBase {
             }
 
             if (east != -1) {
-                double tmp[] = new double[5 * (iend - ist + 1)];
-                MPI.iRecv(tmp, 5 * (iend - ist + 1), east, from_e, request_exch);
+                dum1_exch.mpiIRecv(1, ist, 5 * (iend - ist + 1), east, from_e, request_exch);
                 MPI.wait(request_exch);
-                dum1_exch.setValues(1, ist, 5 * (iend - ist + 1), tmp);
-                Unsafe.free(tmp);
+
                 for (i = ist; i <= iend; i++) {
                     g.set(1, i, ny + 1, k, dum1_exch.get(1, i));
                     g.set(2, i, ny + 1, k, dum1_exch.get(2, i));
@@ -1231,7 +1220,7 @@ public class LU extends LUBase {
                     dum_exch.set(5, j, g.get(5, nx, j, k));
                 }
                 MPI.send(dum_exch.getData(), dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
-                trace_send(dum_exch.getData(), dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
+                // trace_send(dum_exch.getData(), dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
             }
 
             if (east != -1) {
@@ -1243,7 +1232,7 @@ public class LU extends LUBase {
                     dum_exch.set(5, i, g.get(5, i, ny, k));
                 }
                 MPI.send(dum_exch.getData(), dum_exch.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
-                trace_send(dum_exch.getData(), dum_exch.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
+                // trace_send(dum_exch.getData(), dum_exch.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
             }
 
         } else {
