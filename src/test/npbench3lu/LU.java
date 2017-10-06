@@ -1141,20 +1141,20 @@ public class LU extends LUBase {
 
     }
 
+    protected final MPI.Request request_exch = new MPI.Request();
+
     public void exchange_1(Array4Ddouble g, int k, int iex) {
 
         int i, j;
         Array2Ddouble dum = new Array2Ddouble(5, isiz1 + isiz2);
         Array2Ddouble dum1 = new Array2Ddouble(5, isiz1 + isiz2);
 
-        MPI.Request request = new MPI.Request();
-
         if (iex == 0) {
 
             if (north != -1) {
                 double tmp[] = new double[5 * (jend - jst + 1)];
-                MPI.iRecv(tmp, 5 * (jend - jst + 1), north, from_n, request);
-                MPI.wait(request);
+                MPI.iRecv(tmp, 5 * (jend - jst + 1), north, from_n, request_exch);
+                MPI.wait(request_exch);
                 // trace_recv(tmp, 5*(jend-jst+1), north, from_n);
                 dum1.setValues(1, jst, 5 * (jend - jst + 1), tmp);
                 // trace_recv(dum1.getData(), dum1.getDataSize(), 999, 999);
@@ -1172,8 +1172,8 @@ public class LU extends LUBase {
 
             if (west != -1) {
                 double tmp[] = new double[5 * (iend - ist + 1)];
-                MPI.iRecv(tmp, 5 * (iend - ist + 1), west, from_w, request);
-                MPI.wait(request);
+                MPI.iRecv(tmp, 5 * (iend - ist + 1), west, from_w, request_exch);
+                MPI.wait(request_exch);
                 trace_recv(tmp, 5 * (iend - ist + 1), west, from_w);
                 dum1.setValues(1, ist, 5 * (iend - ist + 1), tmp);
                 dump_array("dum1 2 ", dum1);
@@ -1190,8 +1190,8 @@ public class LU extends LUBase {
 
             if (south != -1) {
                 double tmp[] = new double[5 * (jend - jst + 1)];
-                MPI.iRecv(tmp, 5 * (jend - jst + 1), south, from_s, request);
-                MPI.wait(request);
+                MPI.iRecv(tmp, 5 * (jend - jst + 1), south, from_s, request_exch);
+                MPI.wait(request_exch);
                 dum1.setValues(1, jst, 5 * (jend - jst + 1), tmp);
                 for (j = jst; j <= jend; j++) {
                     g.set(1, nx + 1, j, k, dum1.get(1, j));
@@ -1204,8 +1204,8 @@ public class LU extends LUBase {
 
             if (east != -1) {
                 double tmp[] = new double[5 * (iend - ist + 1)];
-                MPI.iRecv(tmp, 5 * (iend - ist + 1), east, from_e, request);
-                MPI.wait(request);
+                MPI.iRecv(tmp, 5 * (iend - ist + 1), east, from_e, request_exch);
+                MPI.wait(request_exch);
                 dum1.setValues(1, ist, 5 * (iend - ist + 1), tmp);
                 for (i = ist; i <= iend; i++) {
                     g.set(1, i, ny + 1, k, dum1.get(1, i));
@@ -1280,7 +1280,7 @@ public class LU extends LUBase {
         int i, j, k;
         int ipos1, ipos2;
 
-        MPI.Request request = new MPI.Request();
+        // MPI.Request request_exch = new MPI.Request();
         // Util.printer.p("[").p(id).p("] nsew
         // ").p(north).p(south).p(east).p(west).ln();
 
@@ -1291,7 +1291,7 @@ public class LU extends LUBase {
             // c communicate in the south and north directions
             // c---------------------------------------------------------------------
             if (north != -1) {
-                MPI.iRecv(tmp, 10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_n, request);
+                MPI.iRecv(tmp, 10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_n, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1329,7 +1329,7 @@ public class LU extends LUBase {
             // c receive from north
             // c---------------------------------------------------------------------
             if (north != -1) {
-                MPI.wait(request);
+                MPI.wait(request_exch);
                 buf1.setData(tmp);
 
                 for (k = 1; k <= nz; k++) {
@@ -1352,7 +1352,7 @@ public class LU extends LUBase {
             }
 
             if (south != -1) {
-                MPI.iRecv(tmp, 10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_s, request);
+                MPI.iRecv(tmp, 10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_s, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1383,7 +1383,7 @@ public class LU extends LUBase {
             // c receive from south
             // c---------------------------------------------------------------------
             if (south != -1) {
-                MPI.wait(request);
+                MPI.wait(request_exch);
                 buf1.setData(tmp);
 
                 for (k = 1; k <= nz; k++) {
@@ -1412,7 +1412,7 @@ public class LU extends LUBase {
             // c communicate in the east and west directions
             // c---------------------------------------------------------------------
             if (west != -1) {
-                MPI.iRecv(tmp, 10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_w, request);
+                MPI.iRecv(tmp, 10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_w, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1443,7 +1443,7 @@ public class LU extends LUBase {
             // c receive from west
             // c---------------------------------------------------------------------
             if (west != -1) {
-                MPI.wait(request);
+                MPI.wait(request_exch);
                 buf1.setData(tmp);
 
                 for (k = 1; k <= nz; k++) {
@@ -1466,7 +1466,7 @@ public class LU extends LUBase {
             }
 
             if (east != -1) {
-                MPI.iRecv(tmp, 10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_e, request);
+                MPI.iRecv(tmp, 10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_e, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1497,7 +1497,7 @@ public class LU extends LUBase {
             // c receive from east
             // c---------------------------------------------------------------------
             if (east != -1) {
-                MPI.wait(request);
+                MPI.wait(request_exch);
                 buf1.setData(tmp);
 
                 for (k = 1; k <= nz; k++) {
@@ -1537,7 +1537,7 @@ public class LU extends LUBase {
         Array1Ddouble dum = new Array1Ddouble(1024);
 
         int msgid1, msgid3;
-        MPI.Request request = new MPI.Request();
+        // MPI.Request request_exch = new MPI.Request();
 
         ny2 = ny + 2;
 
@@ -1550,8 +1550,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (jfin1 == ny) {
             double tmp[] = new double[1024];
-            MPI.iRecv(tmp, 2 * nx, MPI.MPI_ANY_SOURCE(), from_e, request);
-            MPI.wait(request);
+            MPI.iRecv(tmp, 2 * nx, MPI.MPI_ANY_SOURCE(), from_e, request_exch);
+            MPI.wait(request_exch);
             dum.setData(tmp);
 
             for (i = 1; i <= nx; i++) {
@@ -1582,8 +1582,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (ifin1 == nx) {
             double tmp[] = new double[1024];
-            MPI.iRecv(tmp, 2 * ny2, MPI.MPI_ANY_SOURCE(), from_s, request);
-            MPI.wait(request);
+            MPI.iRecv(tmp, 2 * ny2, MPI.MPI_ANY_SOURCE(), from_s, request_exch);
+            MPI.wait(request_exch);
             dum.setData(tmp);
 
             for (j = 0; j <= ny + 1; j++) {
@@ -1620,7 +1620,7 @@ public class LU extends LUBase {
         int k;
         Array1Ddouble dum = new Array1Ddouble(1024);
 
-        MPI.Request request = new MPI.Request();
+        // MPI.Request request_exch = new MPI.Request();
 
         // c---------------------------------------------------------------------
         // c communicate in the south and north directions
@@ -1631,8 +1631,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (ifin1 == nx) {
             double[] tmp = new double[1024];
-            MPI.iRecv(tmp, nz, MPI.MPI_ANY_SOURCE(), from_s, request);
-            MPI.wait(request);
+            MPI.iRecv(tmp, nz, MPI.MPI_ANY_SOURCE(), from_s, request_exch);
+            MPI.wait(request_exch);
             dum.setData(tmp);
 
             for (k = 1; k <= nz; k++) {
@@ -1668,7 +1668,7 @@ public class LU extends LUBase {
         int k;
         Array1Ddouble dum = new Array1Ddouble(1024);
 
-        MPI.Request request = new MPI.Request();
+        //MPI.Request request_exch = new MPI.Request();
 
         // c---------------------------------------------------------------------
         // c communicate in the east and west directions
@@ -1679,8 +1679,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (jfin1 == ny) {
             double[] tmp = new double[1024];
-            MPI.iRecv(tmp, nz, MPI.MPI_ANY_SOURCE(), from_e, request);
-            MPI.wait(request);
+            MPI.iRecv(tmp, nz, MPI.MPI_ANY_SOURCE(), from_e, request_exch);
+            MPI.wait(request_exch);
             dum.setData(tmp);
 
             for (k = 1; k <= nz; k++) {
