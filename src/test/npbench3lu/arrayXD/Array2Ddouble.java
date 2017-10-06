@@ -39,7 +39,7 @@ public class Array2Ddouble {
         return data[(x - beginX) + (y - beginY) * sizeX];
     }
 
-    public double[] getData() {
+    private double[] getData() {
         return data;
     }
 
@@ -58,6 +58,14 @@ public class Array2Ddouble {
     public void mpiIRecv(int x, int y, int length, int src, int tag, MPI.Request req) {
         int offset = (x - beginX) + (y - beginY) * sizeX;
         MPI.iRecv(data, offset, length, src, tag, req);
+    }
+
+    public void mpiIRecv(int length, int src, int tag, MPI.Request req) {
+        MPI.iRecv(data, length, src, tag, req);
+    }
+
+    public void mpiSend(int offset, int length, int dest, int tag) {
+        MPI.send(data, offset, length, dest, tag);
     }
 
     public void setValues(int x, int y, int length, double[] values) {

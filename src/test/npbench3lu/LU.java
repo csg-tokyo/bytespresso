@@ -1219,7 +1219,8 @@ public class LU extends LUBase {
                     dum_exch.set(4, j, g.get(4, nx, j, k));
                     dum_exch.set(5, j, g.get(5, nx, j, k));
                 }
-                MPI.send(dum_exch.getData(), dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
+
+                dum_exch.mpiSend(dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
                 // trace_send(dum_exch.getData(), dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
             }
 
@@ -1231,7 +1232,8 @@ public class LU extends LUBase {
                     dum_exch.set(4, i, g.get(4, i, ny, k));
                     dum_exch.set(5, i, g.get(5, i, ny, k));
                 }
-                MPI.send(dum_exch.getData(), dum_exch.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
+
+                dum_exch.mpiSend(dum_exch.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
                 // trace_send(dum_exch.getData(), dum_exch.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
             }
 
@@ -1245,7 +1247,8 @@ public class LU extends LUBase {
                     dum_exch.set(4, j, g.get(4, 1, j, k));
                     dum_exch.set(5, j, g.get(5, 1, j, k));
                 }
-                MPI.send(dum_exch.getData(), dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), north, from_s);
+
+                dum_exch.mpiSend(dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), north, from_s);
             }
 
             if (west != -1) {
@@ -1257,7 +1260,7 @@ public class LU extends LUBase {
                     dum_exch.set(5, i, g.get(5, i, 1, k));
                 }
                 int offset = dum_exch.getIndex(1, ist);
-                MPI.send(dum_exch.getData(), offset, 5 * (iend - ist + 1), west, from_e);
+                dum_exch.mpiSend(offset, 5 * (iend - ist + 1), west, from_e);
             }
 
         }
@@ -1276,14 +1279,14 @@ public class LU extends LUBase {
         // MPI.Request request_exch = new MPI.Request();
         // Util.printer.p("[").p(id).p("] nsew
         // ").p(north).p(south).p(east).p(west).ln();
-        double tmp[] = new double[buf1.getDataSize()];
+
         if (iex == 0) {
 
             // c---------------------------------------------------------------------
             // c communicate in the south and north directions
             // c---------------------------------------------------------------------
             if (north != -1) {
-                MPI.iRecv(tmp, 10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_n, request_exch);
+                buf1.mpiIRecv(10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_n, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1314,15 +1317,14 @@ public class LU extends LUBase {
                  * ln(); }
                  */
 
-                MPI.send(buf.getData(), 0, 10 * ny * nz, south, from_n);
+                buf.mpiSend(0, 10 * ny * nz, south, from_n);
             }
 
             // c---------------------------------------------------------------------
             // c receive from north
             // c---------------------------------------------------------------------
             if (north != -1) {
-                MPI.wait(request_exch);
-                buf1.setData(tmp);
+                MPI.wait(request_exch);         // read buf1
 
                 for (k = 1; k <= nz; k++) {
                     for (j = 1; j <= ny; j++) {
@@ -1344,7 +1346,7 @@ public class LU extends LUBase {
             }
 
             if (south != -1) {
-                MPI.iRecv(tmp, 10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_s, request_exch);
+                buf1.mpiIRecv(10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_s, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1368,15 +1370,14 @@ public class LU extends LUBase {
                     }
                 }
 
-                MPI.send(buf.getData(), 0, 10 * ny * nz, north, from_s);
+                buf.mpiSend(0, 10 * ny * nz, north, from_s);
             }
 
             // c---------------------------------------------------------------------
             // c receive from south
             // c---------------------------------------------------------------------
             if (south != -1) {
-                MPI.wait(request_exch);
-                buf1.setData(tmp);
+                MPI.wait(request_exch);         // read buf1
 
                 for (k = 1; k <= nz; k++) {
                     for (j = 1; j <= ny; j++) {
@@ -1402,7 +1403,7 @@ public class LU extends LUBase {
             // c communicate in the east and west directions
             // c---------------------------------------------------------------------
             if (west != -1) {
-                MPI.iRecv(tmp, 10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_w, request_exch);
+                buf1.mpiIRecv(10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_w, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1426,15 +1427,14 @@ public class LU extends LUBase {
                     }
                 }
 
-                MPI.send(buf.getData(), 0, 10 * nx * nz, east, from_w);
+                buf.mpiSend(0, 10 * nx * nz, east, from_w);
             }
 
             // c---------------------------------------------------------------------
             // c receive from west
             // c---------------------------------------------------------------------
             if (west != -1) {
-                MPI.wait(request_exch);
-                buf1.setData(tmp);
+                MPI.wait(request_exch);         // read buf1
 
                 for (k = 1; k <= nz; k++) {
                     for (i = 1; i <= nx; i++) {
@@ -1456,7 +1456,7 @@ public class LU extends LUBase {
             }
 
             if (east != -1) {
-                MPI.iRecv(tmp, 10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_e, request_exch);
+                buf1.mpiIRecv(10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_e, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1480,15 +1480,14 @@ public class LU extends LUBase {
                     }
                 }
 
-                MPI.send(buf.getData(), 0, 10 * nx * nz, west, from_e);
+                buf.mpiSend(0, 10 * nx * nz, west, from_e);
             }
 
             // c---------------------------------------------------------------------
             // c receive from east
             // c---------------------------------------------------------------------
             if (east != -1) {
-                MPI.wait(request_exch);
-                buf1.setData(tmp);
+                MPI.wait(request_exch);         // read buf1
 
                 for (k = 1; k <= nz; k++) {
                     for (i = 1; i <= nx; i++) {
@@ -1510,8 +1509,6 @@ public class LU extends LUBase {
             }
 
         }
-
-        Unsafe.free(tmp);
     }
 
     // c---------------------------------------------------------------------
