@@ -80,7 +80,7 @@ public class LU extends LUBase {
         char clazz = classArgument(args);
         CLASS = clazz;
         int numProcs = nprocrowArgument(args);
-        LU.java = javaArgument(args);
+        LUBase.inJava = LU.java = javaArgument(args);
         System.out.println("class=" + clazz + " np=" + numProcs + " java=" + LU.java);
 
         try {

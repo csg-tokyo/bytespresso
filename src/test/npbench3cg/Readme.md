@@ -111,13 +111,13 @@ We do not have to care about MPI communication.
 
 When running it, give arguments as:
 
-    java CG class=A np=2
+    java npbench3cg.CG class=A np=2
 
 This specifies the problem size is A and a matrix is partitioned
 by 2 row-wise block striping.  Since the program generates
 `bytespresso.c` after execution, compile it by:
 
-    mpicc bytespresso.c
+    mpicc -O2 bytespresso.c
 
 Then run by, for example,
 
