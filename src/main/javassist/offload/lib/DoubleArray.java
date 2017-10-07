@@ -6,7 +6,7 @@ import javassist.offload.Metaclass;
 import javassist.offload.clang.NativeMultiArrayClass;
 
 /**
- * A two-dimensional array of double type.
+ * A one-dimensional array of double type.
  * It is translated into a native two-dimensional array in C
  * if it is constructed at the Java side.
  * Note that the array elements are not copied when this array object

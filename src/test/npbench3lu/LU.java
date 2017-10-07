@@ -54,6 +54,7 @@ import javassist.offload.Options;
 import javassist.offload.javatoc.DriverException;
 import javassist.offload.lib.MPI;
 import javassist.offload.lib.MPIDriver;
+import javassist.offload.lib.Unsafe;
 import javassist.offload.lib.Util;
 import npbench3lu.arrayXD.*;
 
@@ -212,7 +213,7 @@ public class LU extends LUBase {
         init_comm();
 
         if (id == 0) {
-//            BMArgs.Banner(BMName, clazz);
+            // BMArgs.Banner(BMName, clazz);
             BMArgs.Banner(BMName, '?');
         }
 
@@ -356,7 +357,6 @@ public class LU extends LUBase {
     // c v <-- ( L-inv ) * v
     // c
     // c---------------------------------------------------------------------
-
     protected final Array2Ddouble tmat_blts = new Array2Ddouble(5, 5);
 
     public void blts(int ldmx, int ldmy, int ldmz, int nx, int ny, int nz, int k, double omega, Array4Ddouble v,
@@ -532,7 +532,6 @@ public class LU extends LUBase {
     // c v <-- ( U-inv ) * v
     // c
     // c---------------------------------------------------------------------
-
     protected final Array2Ddouble tmat_buts = new Array2Ddouble(5, 5);
 
     public void buts(int ldmx, int ldmy, int ldmz, int nx, int ny, int nz, int k, double omega, Array4Ddouble v,
@@ -1143,78 +1142,70 @@ public class LU extends LUBase {
 
     }
 
-    protected final Array2Ddouble dum_exch1 = new Array2Ddouble(5, isiz1 + isiz2);
-    protected final Array2Ddouble dum1_exch1 = new Array2Ddouble(5, isiz1 + isiz2);
-    protected final double tmp_exch1[] = new double[5 * ((jend - jst > iend - ist ? jend - jst + 1 : iend - ist + 1 ))];
+    protected final MPI.Request request_exch = new MPI.Request();
+    protected final Array2Ddouble dum_exch = new Array2Ddouble(5, isiz1 + isiz2);
+    protected final Array2Ddouble dum1_exch = new Array2Ddouble(5, isiz1 + isiz2);
 
     public void exchange_1(Array4Ddouble g, int k, int iex) {
 
         int i, j;
 
-        MPI.Request request = new MPI.Request();
-
         if (iex == 0) {
 
             if (north != -1) {
-                MPI.iRecv(tmp_exch1, 5 * (jend - jst + 1), north, from_n, request);
-                MPI.wait(request);
-                // trace_recv(tmp, 5*(jend-jst+1), north, from_n);
-                dum1_exch1.setValues(1, jst, 5 * (jend - jst + 1), tmp_exch1);
-                // trace_recv(dum1.getData(), dum1.getDataSize(), 999, 999);
+                dum1_exch.mpiIRecv(1, jst, 5 * (jend - jst + 1), north, from_n, request_exch);
+                MPI.wait(request_exch);
 
                 // dump_array("dum1 1 ", dum1);
                 // dump_array("g", g);
                 for (j = jst; j <= jend; j++) {
-                    g.set(1, 0, j, k, dum1_exch1.get(1, j));
-                    g.set(2, 0, j, k, dum1_exch1.get(2, j));
-                    g.set(3, 0, j, k, dum1_exch1.get(3, j));
-                    g.set(4, 0, j, k, dum1_exch1.get(4, j));
-                    g.set(5, 0, j, k, dum1_exch1.get(5, j));
+                    g.set(1, 0, j, k, dum1_exch.get(1, j));
+                    g.set(2, 0, j, k, dum1_exch.get(2, j));
+                    g.set(3, 0, j, k, dum1_exch.get(3, j));
+                    g.set(4, 0, j, k, dum1_exch.get(4, j));
+                    g.set(5, 0, j, k, dum1_exch.get(5, j));
                 }
             }
 
             if (west != -1) {
-                MPI.iRecv(tmp_exch1, 5 * (iend - ist + 1), west, from_w, request);
-                MPI.wait(request);
-                trace_recv(tmp_exch1, 5 * (iend - ist + 1), west, from_w);
-                dum1_exch1.setValues(1, ist, 5 * (iend - ist + 1), tmp_exch1);
-                // dump_array("dum1 2 ", dum1_exch1);
+                dum1_exch.mpiIRecv(1, ist, 5 * (iend - ist + 1), west, from_w, request_exch);
+                MPI.wait(request_exch);
+
+                // dump_array("dum1 2 ", dum1);
                 // dump_array("g", g);
                 for (i = ist; i <= iend; i++) {
-                    g.set(1, i, 0, k, dum1_exch1.get(1, i));
-                    g.set(2, i, 0, k, dum1_exch1.get(2, i));
-                    g.set(3, i, 0, k, dum1_exch1.get(3, i));
-                    g.set(4, i, 0, k, dum1_exch1.get(4, i));
-                    g.set(5, i, 0, k, dum1_exch1.get(5, i));
+                    g.set(1, i, 0, k, dum1_exch.get(1, i));
+                    g.set(2, i, 0, k, dum1_exch.get(2, i));
+                    g.set(3, i, 0, k, dum1_exch.get(3, i));
+                    g.set(4, i, 0, k, dum1_exch.get(4, i));
+                    g.set(5, i, 0, k, dum1_exch.get(5, i));
                 }
             }
         } else if (iex == 1) {
 
             if (south != -1) {
-                // double tmp[] = new double[5 * (jend - jst + 1)];
-                MPI.iRecv(tmp_exch1, 5 * (jend - jst + 1), south, from_s, request);
-                MPI.wait(request);
-                dum1_exch1.setValues(1, jst, 5 * (jend - jst + 1), tmp_exch1);
+                dum1_exch.mpiIRecv(1, jst, 5 * (jend - jst + 1), south, from_s, request_exch);
+                MPI.wait(request_exch);
+
                 for (j = jst; j <= jend; j++) {
-                    g.set(1, nx + 1, j, k, dum1_exch1.get(1, j));
-                    g.set(2, nx + 1, j, k, dum1_exch1.get(2, j));
-                    g.set(3, nx + 1, j, k, dum1_exch1.get(3, j));
-                    g.set(4, nx + 1, j, k, dum1_exch1.get(4, j));
-                    g.set(5, nx + 1, j, k, dum1_exch1.get(5, j));
+                    g.set(1, nx + 1, j, k, dum1_exch.get(1, j));
+                    g.set(2, nx + 1, j, k, dum1_exch.get(2, j));
+                    g.set(3, nx + 1, j, k, dum1_exch.get(3, j));
+                    g.set(4, nx + 1, j, k, dum1_exch.get(4, j));
+                    g.set(5, nx + 1, j, k, dum1_exch.get(5, j));
                 }
             }
 
             if (east != -1) {
-                // double tmp[] = new double[5 * (iend - ist + 1)];
-                MPI.iRecv(tmp_exch1, 5 * (iend - ist + 1), east, from_e, request);
-                MPI.wait(request);
-                dum1_exch1.setValues(1, ist, 5 * (iend - ist + 1), tmp_exch1);
+                dum1_exch.mpiIRecv(1, ist, 5 * (iend - ist + 1), east, from_e, request_exch);
+                MPI.wait(request_exch);
+
                 for (i = ist; i <= iend; i++) {
-                    g.set(1, i, ny + 1, k, dum1_exch1.get(1, i));
-                    g.set(2, i, ny + 1, k, dum1_exch1.get(2, i));
-                    g.set(3, i, ny + 1, k, dum1_exch1.get(3, i));
-                    g.set(4, i, ny + 1, k, dum1_exch1.get(4, i));
-                    g.set(5, i, ny + 1, k, dum1_exch1.get(5, i));
+                    g.set(1, i, ny + 1, k, dum1_exch.get(1, i));
+                    g.set(2, i, ny + 1, k, dum1_exch.get(2, i));
+                    g.set(3, i, ny + 1, k, dum1_exch.get(3, i));
+                    g.set(4, i, ny + 1, k, dum1_exch.get(4, i));
+                    g.set(5, i, ny + 1, k, dum1_exch.get(5, i));
                 }
             }
 
@@ -1222,59 +1213,60 @@ public class LU extends LUBase {
 
             if (south != -1) {
                 for (j = jst; j <= jend; j++) {
-                    dum_exch1.set(1, j, g.get(1, nx, j, k));
-                    dum_exch1.set(2, j, g.get(2, nx, j, k));
-                    dum_exch1.set(3, j, g.get(3, nx, j, k));
-                    dum_exch1.set(4, j, g.get(4, nx, j, k));
-                    dum_exch1.set(5, j, g.get(5, nx, j, k));
+                    dum_exch.set(1, j, g.get(1, nx, j, k));
+                    dum_exch.set(2, j, g.get(2, nx, j, k));
+                    dum_exch.set(3, j, g.get(3, nx, j, k));
+                    dum_exch.set(4, j, g.get(4, nx, j, k));
+                    dum_exch.set(5, j, g.get(5, nx, j, k));
                 }
-                MPI.send(dum_exch1.getData(), dum_exch1.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
-                trace_send(dum_exch1.getData(), dum_exch1.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
+
+                dum_exch.mpiSend(dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
+                // trace_send(dum_exch.getData(), dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), south, from_n);
             }
 
             if (east != -1) {
                 for (i = ist; i <= iend; i++) {
-                    dum_exch1.set(1, i, g.get(1, i, ny, k));
-                    dum_exch1.set(2, i, g.get(2, i, ny, k));
-                    dum_exch1.set(3, i, g.get(3, i, ny, k));
-                    dum_exch1.set(4, i, g.get(4, i, ny, k));
-                    dum_exch1.set(5, i, g.get(5, i, ny, k));
+                    dum_exch.set(1, i, g.get(1, i, ny, k));
+                    dum_exch.set(2, i, g.get(2, i, ny, k));
+                    dum_exch.set(3, i, g.get(3, i, ny, k));
+                    dum_exch.set(4, i, g.get(4, i, ny, k));
+                    dum_exch.set(5, i, g.get(5, i, ny, k));
                 }
-                MPI.send(dum_exch1.getData(), dum_exch1.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
-                trace_send(dum_exch1.getData(), dum_exch1.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
+
+                dum_exch.mpiSend(dum_exch.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
+                // trace_send(dum_exch.getData(), dum_exch.getIndex(1, ist), 5 * (iend - ist + 1), east, from_w);
             }
 
         } else {
 
             if (north != -1) {
                 for (j = jst; j <= jend; j++) {
-                    dum_exch1.set(1, j, g.get(1, 1, j, k));
-                    dum_exch1.set(2, j, g.get(2, 1, j, k));
-                    dum_exch1.set(3, j, g.get(3, 1, j, k));
-                    dum_exch1.set(4, j, g.get(4, 1, j, k));
-                    dum_exch1.set(5, j, g.get(5, 1, j, k));
+                    dum_exch.set(1, j, g.get(1, 1, j, k));
+                    dum_exch.set(2, j, g.get(2, 1, j, k));
+                    dum_exch.set(3, j, g.get(3, 1, j, k));
+                    dum_exch.set(4, j, g.get(4, 1, j, k));
+                    dum_exch.set(5, j, g.get(5, 1, j, k));
                 }
-                MPI.send(dum_exch1.getData(), dum_exch1.getIndex(1, jst), 5 * (jend - jst + 1), north, from_s);
+
+                dum_exch.mpiSend(dum_exch.getIndex(1, jst), 5 * (jend - jst + 1), north, from_s);
             }
 
             if (west != -1) {
                 for (i = ist; i <= iend; i++) {
-                    dum_exch1.set(1, i, g.get(1, i, 1, k));
-                    dum_exch1.set(2, i, g.get(2, i, 1, k));
-                    dum_exch1.set(3, i, g.get(3, i, 1, k));
-                    dum_exch1.set(4, i, g.get(4, i, 1, k));
-                    dum_exch1.set(5, i, g.get(5, i, 1, k));
+                    dum_exch.set(1, i, g.get(1, i, 1, k));
+                    dum_exch.set(2, i, g.get(2, i, 1, k));
+                    dum_exch.set(3, i, g.get(3, i, 1, k));
+                    dum_exch.set(4, i, g.get(4, i, 1, k));
+                    dum_exch.set(5, i, g.get(5, i, 1, k));
                 }
-                int offset = dum_exch1.getIndex(1, ist);
-                MPI.send(dum_exch1.getData(), offset, 5 * (iend - ist + 1), west, from_e);
+                int offset = dum_exch.getIndex(1, ist);
+                dum_exch.mpiSend(offset, 5 * (iend - ist + 1), west, from_e);
             }
 
         }
 
         // dump_array("g", g);
     }
-
-    protected double tmp_exch3[] = new double[buf1.getDataSize()];
 
     public void exchange_3(Array4Ddouble g, int iex) {
 
@@ -1284,7 +1276,7 @@ public class LU extends LUBase {
         int i, j, k;
         int ipos1, ipos2;
 
-        MPI.Request request = new MPI.Request();
+        // MPI.Request request_exch = new MPI.Request();
         // Util.printer.p("[").p(id).p("] nsew
         // ").p(north).p(south).p(east).p(west).ln();
 
@@ -1294,7 +1286,7 @@ public class LU extends LUBase {
             // c communicate in the south and north directions
             // c---------------------------------------------------------------------
             if (north != -1) {
-                MPI.iRecv(tmp_exch3, 10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_n, request);
+                buf1.mpiIRecv(10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_n, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1325,15 +1317,14 @@ public class LU extends LUBase {
                  * ln(); }
                  */
 
-                MPI.send(buf.getData(), 0, 10 * ny * nz, south, from_n);
+                buf.mpiSend(0, 10 * ny * nz, south, from_n);
             }
 
             // c---------------------------------------------------------------------
             // c receive from north
             // c---------------------------------------------------------------------
             if (north != -1) {
-                MPI.wait(request);
-                buf1.setData(tmp_exch3);
+                MPI.wait(request_exch);         // read buf1
 
                 for (k = 1; k <= nz; k++) {
                     for (j = 1; j <= ny; j++) {
@@ -1355,7 +1346,7 @@ public class LU extends LUBase {
             }
 
             if (south != -1) {
-                MPI.iRecv(tmp_exch3, 10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_s, request);
+                buf1.mpiIRecv(10 * ny * nz, MPI.MPI_ANY_SOURCE(), from_s, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1379,15 +1370,14 @@ public class LU extends LUBase {
                     }
                 }
 
-                MPI.send(buf.getData(), 0, 10 * ny * nz, north, from_s);
+                buf.mpiSend(0, 10 * ny * nz, north, from_s);
             }
 
             // c---------------------------------------------------------------------
             // c receive from south
             // c---------------------------------------------------------------------
             if (south != -1) {
-                MPI.wait(request);
-                buf1.setData(tmp_exch3);
+                MPI.wait(request_exch);         // read buf1
 
                 for (k = 1; k <= nz; k++) {
                     for (j = 1; j <= ny; j++) {
@@ -1409,13 +1399,11 @@ public class LU extends LUBase {
 
         } else {
 
-            // double tmp[] = new double[buf1.getDataSize()];
-
             // c---------------------------------------------------------------------
             // c communicate in the east and west directions
             // c---------------------------------------------------------------------
             if (west != -1) {
-                MPI.iRecv(tmp_exch3, 10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_w, request);
+                buf1.mpiIRecv(10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_w, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1439,15 +1427,14 @@ public class LU extends LUBase {
                     }
                 }
 
-                MPI.send(buf.getData(), 0, 10 * nx * nz, east, from_w);
+                buf.mpiSend(0, 10 * nx * nz, east, from_w);
             }
 
             // c---------------------------------------------------------------------
             // c receive from west
             // c---------------------------------------------------------------------
             if (west != -1) {
-                MPI.wait(request);
-                buf1.setData(tmp_exch3);
+                MPI.wait(request_exch);         // read buf1
 
                 for (k = 1; k <= nz; k++) {
                     for (i = 1; i <= nx; i++) {
@@ -1469,7 +1456,7 @@ public class LU extends LUBase {
             }
 
             if (east != -1) {
-                MPI.iRecv(tmp_exch3, 10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_e, request);
+                buf1.mpiIRecv(10 * nx * nz, MPI.MPI_ANY_SOURCE(), from_e, request_exch);
             }
 
             // c---------------------------------------------------------------------
@@ -1493,15 +1480,14 @@ public class LU extends LUBase {
                     }
                 }
 
-                MPI.send(buf.getData(), 0, 10 * nx * nz, west, from_e);
+                buf.mpiSend(0, 10 * nx * nz, west, from_e);
             }
 
             // c---------------------------------------------------------------------
             // c receive from east
             // c---------------------------------------------------------------------
             if (east != -1) {
-                MPI.wait(request);
-                buf1.setData(tmp_exch3);
+                MPI.wait(request_exch);         // read buf1
 
                 for (k = 1; k <= nz; k++) {
                     for (i = 1; i <= nx; i++) {
@@ -1523,12 +1509,12 @@ public class LU extends LUBase {
             }
 
         }
-
     }
 
     // c---------------------------------------------------------------------
     // c compute the right hand side based on exact solution
     // c---------------------------------------------------------------------
+    protected final Array1Ddouble dum_exch4 = new Array1Ddouble(1024);
 
     public void exchange_4(Array2Ddouble g, Array2Ddouble h, int ibeg, int ifin1, int jbeg, int jfin1) {
 
@@ -1537,10 +1523,9 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         int i, j;
         int ny2;
-        Array1Ddouble dum = new Array1Ddouble(1024);
 
-        int msgid1, msgid3;
-        MPI.Request request = new MPI.Request();
+        // int msgid1, msgid3;
+        // MPI.Request request_exch = new MPI.Request();
 
         ny2 = ny + 2;
 
@@ -1553,15 +1538,15 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (jfin1 == ny) {
             double tmp[] = new double[1024];
-            MPI.iRecv(tmp, 2 * nx, MPI.MPI_ANY_SOURCE(), from_e, request);
-            MPI.wait(request);
-            dum.setData(tmp);
+            MPI.iRecv(tmp, 2 * nx, MPI.MPI_ANY_SOURCE(), from_e, request_exch);
+            MPI.wait(request_exch);
+            dum_exch4.setData(tmp);
 
             for (i = 1; i <= nx; i++) {
-                g.set(i, ny + 1, dum.get(i));
-                h.set(i, ny + 1, dum.get(i + nx));
+                g.set(i, ny + 1, dum_exch4.get(i));
+                h.set(i, ny + 1, dum_exch4.get(i + nx));
             }
-
+            Unsafe.free(tmp);
         }
 
         // c---------------------------------------------------------------------
@@ -1569,11 +1554,11 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (jbeg == 1) {
             for (i = 1; i <= nx; i++) {
-                dum.set(i, g.get(i, 1));
-                dum.set(i + nx, h.get(i, 1));
+                dum_exch4.set(i, g.get(i, 1));
+                dum_exch4.set(i + nx, h.get(i, 1));
             }
 
-            MPI.send(dum.getData(), 0, 2 * nx, west, from_e);
+            MPI.send(dum_exch4.getData(), 0, 2 * nx, west, from_e);
         }
 
         // c---------------------------------------------------------------------
@@ -1585,15 +1570,15 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (ifin1 == nx) {
             double tmp[] = new double[1024];
-            MPI.iRecv(tmp, 2 * ny2, MPI.MPI_ANY_SOURCE(), from_s, request);
-            MPI.wait(request);
-            dum.setData(tmp);
+            MPI.iRecv(tmp, 2 * ny2, MPI.MPI_ANY_SOURCE(), from_s, request_exch);
+            MPI.wait(request_exch);
+            dum_exch4.setData(tmp);
 
             for (j = 0; j <= ny + 1; j++) {
-                g.set(nx + 1, j, dum.get(j + 1));
-                h.set(nx + 1, j, dum.get(j + ny2 + 1));
+                g.set(nx + 1, j, dum_exch4.get(j + 1));
+                h.set(nx + 1, j, dum_exch4.get(j + ny2 + 1));
             }
-
+            Unsafe.free(tmp);
         }
 
         // c---------------------------------------------------------------------
@@ -1601,11 +1586,11 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (ibeg == 1) {
             for (j = 0; j <= ny + 1; j++) {
-                dum.set(j + 1, g.get(1, j));
-                dum.set(j + ny2 + 1, h.get(1, j));
+                dum_exch4.set(j + 1, g.get(1, j));
+                dum_exch4.set(j + ny2 + 1, h.get(1, j));
             }
 
-            MPI.send(dum.getData(), 0, 2 * ny2, north, from_s);
+            MPI.send(dum_exch4.getData(), 0, 2 * ny2, north, from_s);
         }
 
         return;
@@ -1621,9 +1606,9 @@ public class LU extends LUBase {
         // c local variables
         // c---------------------------------------------------------------------
         int k;
-        Array1Ddouble dum = new Array1Ddouble(1024);
+        // Array1Ddouble dum_exch4 = new Array1Ddouble(1024);
 
-        MPI.Request request = new MPI.Request();
+        // MPI.Request request_exch = new MPI.Request();
 
         // c---------------------------------------------------------------------
         // c communicate in the south and north directions
@@ -1634,14 +1619,15 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (ifin1 == nx) {
             double[] tmp = new double[1024];
-            MPI.iRecv(tmp, nz, MPI.MPI_ANY_SOURCE(), from_s, request);
-            MPI.wait(request);
-            dum.setData(tmp);
+            MPI.iRecv(tmp, nz, MPI.MPI_ANY_SOURCE(), from_s, request_exch);
+            MPI.wait(request_exch);
+            dum_exch4.setData(tmp);
 
             for (k = 1; k <= nz; k++) {
-                g.set(nx + 1, k, dum.get(k));
+                g.set(nx + 1, k, dum_exch4.get(k));
             }
 
+            Unsafe.free(tmp);
         }
 
         // c---------------------------------------------------------------------
@@ -1649,10 +1635,10 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (ibeg == 1) {
             for (k = 1; k <= nz; k++) {
-                dum.set(k, g.get(1, k));
+                dum_exch4.set(k, g.get(1, k));
             }
 
-            MPI.send(dum.getData(), 0, nz, north, from_s);
+            MPI.send(dum_exch4.getData(), 0, nz, north, from_s);
         }
 
         return;
@@ -1669,9 +1655,9 @@ public class LU extends LUBase {
         // c local parameters
         // c---------------------------------------------------------------------
         int k;
-        Array1Ddouble dum = new Array1Ddouble(1024);
+        // Array1Ddouble dum_exch4 = new Array1Ddouble(1024);
 
-        MPI.Request request = new MPI.Request();
+        //MPI.Request request_exch = new MPI.Request();
 
         // c---------------------------------------------------------------------
         // c communicate in the east and west directions
@@ -1682,14 +1668,15 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (jfin1 == ny) {
             double[] tmp = new double[1024];
-            MPI.iRecv(tmp, nz, MPI.MPI_ANY_SOURCE(), from_e, request);
-            MPI.wait(request);
-            dum.setData(tmp);
+            MPI.iRecv(tmp, nz, MPI.MPI_ANY_SOURCE(), from_e, request_exch);
+            MPI.wait(request_exch);
+            dum_exch4.setData(tmp);
 
             for (k = 1; k <= nz; k++) {
-                g.set(ny + 1, k, dum.get(k));
+                g.set(ny + 1, k, dum_exch4.get(k));
             }
 
+            Unsafe.free(tmp);
         }
 
         // c---------------------------------------------------------------------
@@ -1697,10 +1684,10 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         if (jbeg == 1) {
             for (k = 1; k <= nz; k++) {
-                dum.set(k, g.get(1, k));
+                dum_exch4.set(k, g.get(1, k));
             }
 
-            MPI.send(dum.getData(), 0, nz, west, from_e);
+            MPI.send(dum_exch4.getData(), 0, nz, west, from_e);
         }
 
         return;
@@ -1712,6 +1699,8 @@ public class LU extends LUBase {
     // c compute the solution error
     // c
     // c---------------------------------------------------------------------
+    protected final Array1Ddouble u000ijk_error = new Array1Ddouble(5);
+    protected final Array1Ddouble dummy_error = new Array1Ddouble(5);
 
     public void error() {
 
@@ -1721,12 +1710,10 @@ public class LU extends LUBase {
         int i, j, k, m;
         int iglob, jglob;
         double tmp;
-        Array1Ddouble u000ijk = new Array1Ddouble(5);
-        Array1Ddouble dummy = new Array1Ddouble(5);
 
         for (m = 1; m <= 5; m++) {
             errnm.set(m, 0.0e+00);
-            dummy.set(m, 0.0e+00);
+            dummy_error.set(m, 0.0e+00);
         }
 
         for (k = 2; k <= nz - 1; k++) {
@@ -1734,10 +1721,10 @@ public class LU extends LUBase {
                 jglob = jpt + j;
                 for (i = ist; i <= iend; i++) {
                     iglob = ipt + i;
-                    exact(iglob, jglob, k, u000ijk, 1);
+                    exact(iglob, jglob, k, u000ijk_error, 1);
                     for (m = 1; m <= 5; m++) {
-                        tmp = (u000ijk.get(m) - u.get(m, i, j, k));
-                        dummy.set(m, dummy.get(m) + tmp * tmp);
+                        tmp = (u000ijk_error.get(m) - u.get(m, i, j, k));
+                        dummy_error.set(m, dummy_error.get(m) + tmp * tmp);
                     }
                 }
             }
@@ -1749,9 +1736,9 @@ public class LU extends LUBase {
 
         double[] result = new double[5];
 
-        MPI.allReduce_sum(dummy.getData(), result);
+        MPI.allReduce_sum(dummy_error.getData(), result);
         errnm.setData(result);
-
+        Unsafe.free(result);
         for (m = 1; m <= 5; m++) {
             errnm.set(m, Util.sqrt(errnm.get(m) / ((nx0 - 2) * (ny0 - 2) * (nz0 - 2))));
         }
@@ -2350,9 +2337,6 @@ public class LU extends LUBase {
     // c---------------------------------------------------------------------
     // c to compute the l2-norm of vector v.
     // c---------------------------------------------------------------------
-    protected final double[] dummy_l2norm = new double[5];
-    protected final double[] tmp_l2norm = new double[5];
-
     public void l2norm(int ldx, int ldy, int ldz, int nx0, int ny0, int nz0, int ist, int iend, int jst, int jend,
             Array4Ddouble v, Array1Ddouble sum) {
 
@@ -2371,16 +2355,17 @@ public class LU extends LUBase {
         // c local variables
         // c---------------------------------------------------------------------
         int i, j, k, m;
+        double[] dummy = new double[5];
 
         for (m = 1; m <= 5; m++) {
-            dummy_l2norm[m - 1] = 0.0e+00;
+            dummy[m - 1] = 0.0e+00;
         }
 
         for (k = 2; k <= nz0 - 1; k++) {
             for (j = jst; j <= jend; j++) {
                 for (i = ist; i <= iend; i++) {
                     for (m = 1; m <= 5; m++) {
-                        dummy_l2norm[m - 1] = dummy_l2norm[m - 1] + v.get(m, i, j, k) * v.get(m, i, j, k);
+                        dummy[m - 1] = dummy[m - 1] + v.get(m, i, j, k) * v.get(m, i, j, k);
                     }
                 }
             }
@@ -2395,17 +2380,23 @@ public class LU extends LUBase {
         // ").p(dummy[m]).ln();
         // }
 
-        MPI.allReduce_sum(dummy_l2norm, tmp_l2norm);
+        double[] tmp = new double[5];
+        MPI.allReduce_sum(dummy, tmp);
 
         for (m = 1; m <= 5; m++) {
-            tmp_l2norm[m - 1] = Util.sqrt(tmp_l2norm[m - 1] / ((nx0 - 2) * (ny0 - 2) * (nz0 - 2)));
+            tmp[m - 1] = Util.sqrt(tmp[m - 1] / ((nx0 - 2) * (ny0 - 2) * (nz0 - 2)));
             // if (id == 0) {
             // Util.printer.p("sum[").p(m - 1).p("] = ").e(tmp[m-1]).ln();
             // }
         }
 
-        sum.setData(tmp_l2norm);
+        sum.setData(tmp);
+        Unsafe.free(tmp);
+        Unsafe.free(dummy);
     }
+
+    protected final Array2Ddouble phi1_pintgr = new Array2Ddouble(0, isiz2 + 1, 0, isiz3 + 1);
+    protected final Array2Ddouble phi2_pintgr = new Array2Ddouble(0, isiz2 + 1, 0, isiz3 + 1);
 
     public void pintgr() {
 
@@ -2418,8 +2409,6 @@ public class LU extends LUBase {
         int iglob, iglob1, iglob2;
         int jglob, jglob1, jglob2;
         int ind1, ind2;
-        Array2Ddouble phi1 = new Array2Ddouble(0, isiz2 + 1, 0, isiz3 + 1);
-        Array2Ddouble phi2 = new Array2Ddouble(0, isiz2 + 1, 0, isiz3 + 1);
         double frc1, frc2, frc3;
         double dummy;
 
@@ -2462,8 +2451,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         for (i = 0; i <= isiz2 + 1; i++) {
             for (k = 0; k <= isiz3 + 1; k++) {
-                phi1.set(i, k, 0);
-                phi2.set(i, k, 0);
+                phi1_pintgr.set(i, k, 0);
+                phi2_pintgr.set(i, k, 0);
             }
         }
 
@@ -2474,14 +2463,14 @@ public class LU extends LUBase {
 
                 k = ki1;
 
-                phi1.set(i, j,
+                phi1_pintgr.set(i, j,
                         c2 * (u.get(5, i, j, k) - 0.50e+00 * (u.get(2, i, j, k) * u.get(2, i, j, k)
                                 + u.get(3, i, j, k) * u.get(3, i, j, k) + u.get(4, i, j, k) * u.get(4, i, j, k))
                                 / u.get(1, i, j, k)));
 
                 k = ki2;
 
-                phi2.set(i, j,
+                phi2_pintgr.set(i, j,
                         c2 * (u.get(5, i, j, k) - 0.50e+00 * (u.get(2, i, j, k) * u.get(2, i, j, k)
                                 + u.get(3, i, j, k) * u.get(3, i, j, k) + u.get(4, i, j, k) * u.get(4, i, j, k))
                                 / u.get(1, i, j, k)));
@@ -2491,14 +2480,14 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         // c communicate in i and j directions
         // c---------------------------------------------------------------------
-        exchange_4(phi1, phi2, ibeg, ifin1, jbeg, jfin1);
+        exchange_4(phi1_pintgr, phi2_pintgr, ibeg, ifin1, jbeg, jfin1);
 
         frc1 = 0.0e+00;
 
         for (j = jbeg; j <= jfin1; j++) {
             for (i = ibeg; i <= ifin1; i++) {
-                frc1 = frc1 + (phi1.get(i, j) + phi1.get(i + 1, j) + phi1.get(i, j + 1) + phi1.get(i + 1, j + 1)
-                        + phi2.get(i, j) + phi2.get(i + 1, j) + phi2.get(i, j + 1) + phi2.get(i + 1, j + 1));
+                frc1 = frc1 + (phi1_pintgr.get(i, j) + phi1_pintgr.get(i + 1, j) + phi1_pintgr.get(i, j + 1) + phi1_pintgr.get(i + 1, j + 1)
+                        + phi2_pintgr.get(i, j) + phi2_pintgr.get(i + 1, j) + phi2_pintgr.get(i, j + 1) + phi2_pintgr.get(i + 1, j + 1));
             }
         }
 
@@ -2515,8 +2504,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         for (i = 0; i <= isiz2 + 1; i++) {
             for (k = 0; k <= isiz3 + 1; k++) {
-                phi1.set(i, k, 0);
-                phi2.set(i, k, 0);
+                phi1_pintgr.set(i, k, 0);
+                phi2_pintgr.set(i, k, 0);
             }
         }
         jglob = jpt + jbeg;
@@ -2526,7 +2515,7 @@ public class LU extends LUBase {
             for (k = ki1; k <= ki2; k++) {
                 for (i = ibeg; i <= ifin; i++) {
                     iglob = ipt + i;
-                    phi1.set(i, k, c2 * (u.get(5, i, jbeg, k) - 0.50e+00 * (u.get(2, i, jbeg, k) * u.get(2, i, jbeg, k)
+                    phi1_pintgr.set(i, k, c2 * (u.get(5, i, jbeg, k) - 0.50e+00 * (u.get(2, i, jbeg, k) * u.get(2, i, jbeg, k)
                             + u.get(3, i, jbeg, k) * u.get(3, i, jbeg, k) + u.get(4, i, jbeg, k) * u.get(4, i, jbeg, k))
                             / u.get(1, i, jbeg, k)));
                 }
@@ -2540,7 +2529,7 @@ public class LU extends LUBase {
             for (k = ki1; k <= ki2; k++) {
                 for (i = ibeg; i <= ifin; i++) {
                     iglob = ipt + i;
-                    phi2.set(i, k, c2 * (u.get(5, i, jfin, k) - 0.50e+00 * (u.get(2, i, jfin, k) * u.get(2, i, jfin, k)
+                    phi2_pintgr.set(i, k, c2 * (u.get(5, i, jfin, k) - 0.50e+00 * (u.get(2, i, jfin, k) * u.get(2, i, jfin, k)
                             + u.get(3, i, jfin, k) * u.get(3, i, jfin, k) + u.get(4, i, jfin, k) * u.get(4, i, jfin, k))
                             / u.get(1, i, jfin, k)));
                 }
@@ -2551,17 +2540,17 @@ public class LU extends LUBase {
         // c communicate in i direction
         // c---------------------------------------------------------------------
         if (ind1 == 1) {
-            exchange_5(phi1, ibeg, ifin1);
+            exchange_5(phi1_pintgr, ibeg, ifin1);
         }
         if (ind2 == 1) {
-            exchange_5(phi2, ibeg, ifin1);
+            exchange_5(phi2_pintgr, ibeg, ifin1);
         }
 
         frc2 = 0.0e+00;
         for (k = ki1; k <= ki2 - 1; k++) {
             for (i = ibeg; i <= ifin1; i++) {
-                frc2 = frc2 + (phi1.get(i, k) + phi1.get(i + 1, k) + phi1.get(i, k + 1) + phi1.get(i + 1, k + 1)
-                        + phi2.get(i, k) + phi2.get(i + 1, k) + phi2.get(i, k + 1) + phi2.get(i + 1, k + 1));
+                frc2 = frc2 + (phi1_pintgr.get(i, k) + phi1_pintgr.get(i + 1, k) + phi1_pintgr.get(i, k + 1) + phi1_pintgr.get(i + 1, k + 1)
+                        + phi2_pintgr.get(i, k) + phi2_pintgr.get(i + 1, k) + phi2_pintgr.get(i, k + 1) + phi2_pintgr.get(i + 1, k + 1));
             }
         }
 
@@ -2578,8 +2567,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         for (i = 0; i <= isiz2 + 1; i++) {
             for (k = 0; k <= isiz3 + 1; k++) {
-                phi1.set(i, k, 0);
-                phi2.set(i, k, 0);
+                phi1_pintgr.set(i, k, 0);
+                phi2_pintgr.set(i, k, 0);
             }
         }
         iglob = ipt + ibeg;
@@ -2589,7 +2578,7 @@ public class LU extends LUBase {
             for (k = ki1; k <= ki2; k++) {
                 for (j = jbeg; j <= jfin; j++) {
                     jglob = jpt + j;
-                    phi1.set(j, k, c2 * (u.get(5, ibeg, j, k) - 0.50e+00 * (u.get(2, ibeg, j, k) * u.get(2, ibeg, j, k)
+                    phi1_pintgr.set(j, k, c2 * (u.get(5, ibeg, j, k) - 0.50e+00 * (u.get(2, ibeg, j, k) * u.get(2, ibeg, j, k)
                             + u.get(3, ibeg, j, k) * u.get(3, ibeg, j, k) + u.get(4, ibeg, j, k) * u.get(4, ibeg, j, k))
                             / u.get(1, ibeg, j, k)));
                 }
@@ -2603,7 +2592,7 @@ public class LU extends LUBase {
             for (k = ki1; k <= ki2; k++) {
                 for (j = jbeg; j <= jfin; j++) {
                     jglob = jpt + j;
-                    phi2.set(j, k, c2 * (u.get(5, ifin, j, k) - 0.50e+00 * (u.get(2, ifin, j, k) * u.get(2, ifin, j, k)
+                    phi2_pintgr.set(j, k, c2 * (u.get(5, ifin, j, k) - 0.50e+00 * (u.get(2, ifin, j, k) * u.get(2, ifin, j, k)
                             + u.get(3, ifin, j, k) * u.get(3, ifin, j, k) + u.get(4, ifin, j, k) * u.get(4, ifin, j, k))
                             / u.get(1, ifin, j, k)));
                 }
@@ -2614,18 +2603,18 @@ public class LU extends LUBase {
         // c communicate in j direction
         // c---------------------------------------------------------------------
         if (ind1 == 1) {
-            exchange_6(phi1, jbeg, jfin1);
+            exchange_6(phi1_pintgr, jbeg, jfin1);
         }
         if (ind2 == 1) {
-            exchange_6(phi2, jbeg, jfin1);
+            exchange_6(phi2_pintgr, jbeg, jfin1);
         }
 
         frc3 = 0.0e+00;
 
         for (k = ki1; k <= ki2 - 1; k++) {
             for (j = jbeg; j <= jfin1; j++) {
-                frc3 = frc3 + (phi1.get(j, k) + phi1.get(j + 1, k) + phi1.get(j, k + 1) + phi1.get(j + 1, k + 1)
-                        + phi2.get(j, k) + phi2.get(j + 1, k) + phi2.get(j, k + 1) + phi2.get(j + 1, k + 1));
+                frc3 = frc3 + (phi1_pintgr.get(j, k) + phi1_pintgr.get(j + 1, k) + phi1_pintgr.get(j, k + 1) + phi1_pintgr.get(j + 1, k + 1)
+                        + phi2_pintgr.get(j, k) + phi2_pintgr.get(j + 1, k) + phi2_pintgr.get(j, k + 1) + phi2_pintgr.get(j + 1, k + 1));
             }
         }
 
@@ -2796,6 +2785,15 @@ public class LU extends LUBase {
             ny0 = buf_ny0[0];
             nz0 = buf_nz0[0];
         }
+
+        Unsafe.free(buf_ipr);
+        Unsafe.free(buf_inorm);
+        Unsafe.free(buf_itmax);
+        Unsafe.free(buf_dt);
+        Unsafe.free(buf_omega);
+        Unsafe.free(buf_nx0);
+        Unsafe.free(buf_ny0);
+        Unsafe.free(buf_nz0);
     }
 
     // c---------------------------------------------------------------------
@@ -3834,6 +3832,13 @@ public class LU extends LUBase {
     // c interpolation of boundary values in the computational space.
     // c
     // c---------------------------------------------------------------------
+    protected final Array1Ddouble ue_1jk_setiv = new Array1Ddouble(5);
+    protected final Array1Ddouble ue_nx0jk_setiv = new Array1Ddouble(5);
+    protected final Array1Ddouble ue_i1k_setiv = new Array1Ddouble(5);
+    protected final Array1Ddouble ue_iny0k_setiv = new Array1Ddouble(5);
+    protected final Array1Ddouble ue_ij1_setiv = new Array1Ddouble(5);
+    protected final Array1Ddouble ue_ijnz_setiv = new Array1Ddouble(5);
+
     public void setiv() {
         // c---------------------------------------------------------------------
         // c local variables
@@ -3849,12 +3854,6 @@ public class LU extends LUBase {
         int iglob, jglob;
         double xi, eta, zeta;
         double pxi, peta, pzeta;
-        Array1Ddouble ue_1jk = new Array1Ddouble(5);
-        Array1Ddouble ue_nx0jk = new Array1Ddouble(5);
-        Array1Ddouble ue_i1k = new Array1Ddouble(5);
-        Array1Ddouble ue_iny0k = new Array1Ddouble(5);
-        Array1Ddouble ue_ij1 = new Array1Ddouble(5);
-        Array1Ddouble ue_ijnz = new Array1Ddouble(5);
 
         // do k = 2, nz - 1
         // zeta = ( dble (k-1) ) / (nz-1)
@@ -3903,16 +3902,16 @@ public class LU extends LUBase {
                         iglob = ipt + i;
                         if (iglob != 1 && iglob != nx0) {
                             xi = ((double) iglob - 1) / (nx0 - 1);
-                            exact(1, jglob, k, ue_1jk, 1);
-                            exact(nx0, jglob, k, ue_nx0jk, 1);
-                            exact(iglob, 1, k, ue_i1k, 1);
-                            exact(iglob, ny0, k, ue_iny0k, 1);
-                            exact(iglob, jglob, 1, ue_ij1, 1);
-                            exact(iglob, jglob, nz, ue_ijnz, 1);
+                            exact(1, jglob, k, ue_1jk_setiv, 1);
+                            exact(nx0, jglob, k, ue_nx0jk_setiv, 1);
+                            exact(iglob, 1, k, ue_i1k_setiv, 1);
+                            exact(iglob, ny0, k, ue_iny0k_setiv, 1);
+                            exact(iglob, jglob, 1, ue_ij1_setiv, 1);
+                            exact(iglob, jglob, nz, ue_ijnz_setiv, 1);
                             for (m = 1; m <= 5; m++) {
-                                pxi = (1.0e+00 - xi) * ue_1jk.get(m) + xi * ue_nx0jk.get(m);
-                                peta = (1.0e+00 - eta) * ue_i1k.get(m) + eta * ue_iny0k.get(m);
-                                pzeta = (1.0e+00 - zeta) * ue_ij1.get(m) + zeta * ue_ijnz.get(m);
+                                pxi = (1.0e+00 - xi) * ue_1jk_setiv.get(m) + xi * ue_nx0jk_setiv.get(m);
+                                peta = (1.0e+00 - eta) * ue_i1k_setiv.get(m) + eta * ue_iny0k_setiv.get(m);
+                                pzeta = (1.0e+00 - zeta) * ue_ij1_setiv.get(m) + zeta * ue_ijnz_setiv.get(m);
                                 u.set(m, i, j, k, pxi + peta + pzeta - pxi * peta - peta * pzeta - pzeta * pxi
                                         + pxi * peta * pzeta);
                             }
@@ -3929,9 +3928,8 @@ public class LU extends LUBase {
     // c to perform pseudo-time stepping SSOR iterations
     // c for five nonlinear pde's.
     // c---------------------------------------------------------------------
-
-    protected final Array1Ddouble delunm_ssor = new Array1Ddouble(5);
     protected final Array3Ddouble tv_ssor = new Array3Ddouble(5, isiz1, isiz2);
+    protected final Array1Ddouble delunm_ssor = new Array1Ddouble(5);
 
     public double ssor() {
 
@@ -4047,7 +4045,7 @@ public class LU extends LUBase {
                 // c---------------------------------------------------------------------
                 jacld(k);
 
-                //dump_abcd();
+                // dump_abcd();
 
                 // c---------------------------------------------------------------------
                 // c perform the lower triangular solution
@@ -4174,15 +4172,15 @@ public class LU extends LUBase {
     // c---------------------------------------------------------------------
     // c verification routine
     // c---------------------------------------------------------------------
+    protected final Array1Ddouble xcrref_verify = new Array1Ddouble(5);
+    protected final Array1Ddouble xceref_verify = new Array1Ddouble(5);
+    protected final Array1Ddouble xcrdif_verify = new Array1Ddouble(5);
+    protected final Array1Ddouble xcedif_verify = new Array1Ddouble(5);
 
     public boolean verify(Array1Ddouble xcr, Array1Ddouble xce, double xci) {
 
         char clss;
         boolean verified;
-        Array1Ddouble xcrref = new Array1Ddouble(5);
-        Array1Ddouble xceref = new Array1Ddouble(5);
-        Array1Ddouble xcrdif = new Array1Ddouble(5);
-        Array1Ddouble xcedif = new Array1Ddouble(5);
         double xciref, xcidif, epsilon, dtref;
         int m;
 
@@ -4195,8 +4193,8 @@ public class LU extends LUBase {
         verified = true;
 
         for (m = 1; m <= 5; m++) {
-            xcrref.set(m, 1.0);
-            xceref.set(m, 1.0);
+            xcrref_verify.set(m, 1.0);
+            xceref_verify.set(m, 1.0);
         }
         xciref = 1.0;
         dtref = 0;
@@ -4210,22 +4208,22 @@ public class LU extends LUBase {
             // grid,
             // c after 50 time steps, with DT = 5.0e-01
             // c---------------------------------------------------------------------
-            xcrref.set(1, 1.6196343210976702e-02);
-            xcrref.set(2, 2.1976745164821318e-03);
-            xcrref.set(3, 1.5179927653399185e-03);
-            xcrref.set(4, 1.5029584435994323e-03);
-            xcrref.set(5, 3.4264073155896461e-02);
+            xcrref_verify.set(1, 1.6196343210976702e-02);
+            xcrref_verify.set(2, 2.1976745164821318e-03);
+            xcrref_verify.set(3, 1.5179927653399185e-03);
+            xcrref_verify.set(4, 1.5029584435994323e-03);
+            xcrref_verify.set(5, 3.4264073155896461e-02);
 
             // c---------------------------------------------------------------------
             // c Reference values of RMS-norms of solution error, for the
             // (12X12X12) grid,
             // c after 50 time steps, with DT = 5.0e-01
             // c---------------------------------------------------------------------
-            xceref.set(1, 6.4223319957960924e-04);
-            xceref.set(2, 8.4144342047347926e-05);
-            xceref.set(3, 5.8588269616485186e-05);
-            xceref.set(4, 5.8474222595157350e-05);
-            xceref.set(5, 1.3103347914111294e-03);
+            xceref_verify.set(1, 6.4223319957960924e-04);
+            xceref_verify.set(2, 8.4144342047347926e-05);
+            xceref_verify.set(3, 5.8588269616485186e-05);
+            xceref_verify.set(4, 5.8474222595157350e-05);
+            xceref_verify.set(5, 1.3103347914111294e-03);
 
             // c---------------------------------------------------------------------
             // c Reference value of surface integral, for the (12X12X12) grid,
@@ -4242,21 +4240,21 @@ public class LU extends LUBase {
             // grid,
             // c after 300 time steps, with DT = 1.5e-3
             // c---------------------------------------------------------------------
-            xcrref.set(1, 0.1236511638192e+02);
-            xcrref.set(2, 0.1317228477799e+01);
-            xcrref.set(3, 0.2550120713095e+01);
-            xcrref.set(4, 0.2326187750252e+01);
-            xcrref.set(5, 0.2826799444189e+02);
+            xcrref_verify.set(1, 0.1236511638192e+02);
+            xcrref_verify.set(2, 0.1317228477799e+01);
+            xcrref_verify.set(3, 0.2550120713095e+01);
+            xcrref_verify.set(4, 0.2326187750252e+01);
+            xcrref_verify.set(5, 0.2826799444189e+02);
 
             // c---------------------------------------------------------------------
             // c Reference values of RMS-norms of solution error, for the
             // (33X33X33) grid,
             // c---------------------------------------------------------------------
-            xceref.set(1, 0.4867877144216e+00);
-            xceref.set(2, 0.5064652880982e-01);
-            xceref.set(3, 0.9281818101960e-01);
-            xceref.set(4, 0.8570126542733e-01);
-            xceref.set(5, 0.1084277417792e+01);
+            xceref_verify.set(1, 0.4867877144216e+00);
+            xceref_verify.set(2, 0.5064652880982e-01);
+            xceref_verify.set(3, 0.9281818101960e-01);
+            xceref_verify.set(4, 0.8570126542733e-01);
+            xceref_verify.set(5, 0.1084277417792e+01);
 
             // c---------------------------------------------------------------------
             // c Reference value of surface integral, for the (33X33X33) grid,
@@ -4273,22 +4271,22 @@ public class LU extends LUBase {
             // grid,
             // c after 250 time steps, with DT = 2.0e+00
             // c---------------------------------------------------------------------
-            xcrref.set(1, 7.7902107606689367e+02);
-            xcrref.set(2, 6.3402765259692870e+01);
-            xcrref.set(3, 1.9499249727292479e+02);
-            xcrref.set(4, 1.7845301160418537e+02);
-            xcrref.set(5, 1.8384760349464247e+03);
+            xcrref_verify.set(1, 7.7902107606689367e+02);
+            xcrref_verify.set(2, 6.3402765259692870e+01);
+            xcrref_verify.set(3, 1.9499249727292479e+02);
+            xcrref_verify.set(4, 1.7845301160418537e+02);
+            xcrref_verify.set(5, 1.8384760349464247e+03);
 
             // c---------------------------------------------------------------------
             // c Reference values of RMS-norms of solution error, for the
             // (64X64X64) grid,
             // c after 250 time steps, with DT = 2.0e+00
             // c---------------------------------------------------------------------
-            xceref.set(1, 2.9964085685471943e+01);
-            xceref.set(2, 2.8194576365003349e+00);
-            xceref.set(3, 7.3473412698774742e+00);
-            xceref.set(4, 6.7139225687777051e+00);
-            xceref.set(5, 7.0715315688392578e+01);
+            xceref_verify.set(1, 2.9964085685471943e+01);
+            xceref_verify.set(2, 2.8194576365003349e+00);
+            xceref_verify.set(3, 7.3473412698774742e+00);
+            xceref_verify.set(4, 6.7139225687777051e+00);
+            xceref_verify.set(5, 7.0715315688392578e+01);
 
             // c---------------------------------------------------------------------
             // c Reference value of surface integral, for the (64X64X64) grid,
@@ -4306,22 +4304,22 @@ public class LU extends LUBase {
             // (102X102X102) grid,
             // c after 250 time steps, with DT = 2.0e+00
             // c---------------------------------------------------------------------
-            xcrref.set(1, 3.5532672969982736e+03);
-            xcrref.set(2, 2.6214750795310692e+02);
-            xcrref.set(3, 8.8333721850952190e+02);
-            xcrref.set(4, 7.7812774739425265e+02);
-            xcrref.set(5, 7.3087969592545314e+03);
+            xcrref_verify.set(1, 3.5532672969982736e+03);
+            xcrref_verify.set(2, 2.6214750795310692e+02);
+            xcrref_verify.set(3, 8.8333721850952190e+02);
+            xcrref_verify.set(4, 7.7812774739425265e+02);
+            xcrref_verify.set(5, 7.3087969592545314e+03);
 
             // c---------------------------------------------------------------------
             // c Reference values of RMS-norms of solution error, for the
             // (102X102X102)
             // c grid, after 250 time steps, with DT = 2.0e+00
             // c---------------------------------------------------------------------
-            xceref.set(1, 1.1401176380212709e+02);
-            xceref.set(2, 8.1098963655421574e+00);
-            xceref.set(3, 2.8480597317698308e+01);
-            xceref.set(4, 2.5905394567832939e+01);
-            xceref.set(5, 2.6054907504857413e+02);
+            xceref_verify.set(1, 1.1401176380212709e+02);
+            xceref_verify.set(2, 8.1098963655421574e+00);
+            xceref_verify.set(3, 2.8480597317698308e+01);
+            xceref_verify.set(4, 2.5905394567832939e+01);
+            xceref_verify.set(5, 2.6054907504857413e+02);
 
             // c---------------------------------------------------------------------
             // c Reference value of surface integral, for the (102X102X102)
@@ -4340,22 +4338,22 @@ public class LU extends LUBase {
             // (162X162X162) grid,
             // c after 250 time steps, with DT = 2.0e+00
             // c---------------------------------------------------------------------
-            xcrref.set(1, 1.03766980323537846e+04);
-            xcrref.set(2, 8.92212458801008552e+02);
-            xcrref.set(3, 2.56238814582660871e+03);
-            xcrref.set(4, 2.19194343857831427e+03);
-            xcrref.set(5, 1.78078057261061185e+04);
+            xcrref_verify.set(1, 1.03766980323537846e+04);
+            xcrref_verify.set(2, 8.92212458801008552e+02);
+            xcrref_verify.set(3, 2.56238814582660871e+03);
+            xcrref_verify.set(4, 2.19194343857831427e+03);
+            xcrref_verify.set(5, 1.78078057261061185e+04);
 
             // c---------------------------------------------------------------------
             // c Reference values of RMS-norms of solution error, for the
             // (162X162X162)
             // c grid, after 250 time steps, with DT = 2.0e+00
             // c---------------------------------------------------------------------
-            xceref.set(1, 2.15986399716949279e+02);
-            xceref.set(2, 1.55789559239863600e+01);
-            xceref.set(3, 5.41318863077207766e+01);
-            xceref.set(4, 4.82262643154045421e+01);
-            xceref.set(5, 4.55902910043250358e+02);
+            xceref_verify.set(1, 2.15986399716949279e+02);
+            xceref_verify.set(2, 1.55789559239863600e+01);
+            xceref_verify.set(3, 5.41318863077207766e+01);
+            xceref_verify.set(4, 4.82262643154045421e+01);
+            xceref_verify.set(5, 4.55902910043250358e+02);
 
             // c---------------------------------------------------------------------
             // c Reference value of surface integral, for the (162X162X162)
@@ -4374,22 +4372,22 @@ public class LU extends LUBase {
             // (408X408X408) grid,
             // c after 300 time steps, with DT = 1.0e+00
             // c---------------------------------------------------------------------
-            xcrref.set(1, 0.4868417937025e+05);
-            xcrref.set(2, 0.4696371050071e+04);
-            xcrref.set(3, 0.1218114549776e+05);
-            xcrref.set(4, 0.1033801493461e+05);
-            xcrref.set(5, 0.7142398413817e+05);
+            xcrref_verify.set(1, 0.4868417937025e+05);
+            xcrref_verify.set(2, 0.4696371050071e+04);
+            xcrref_verify.set(3, 0.1218114549776e+05);
+            xcrref_verify.set(4, 0.1033801493461e+05);
+            xcrref_verify.set(5, 0.7142398413817e+05);
 
             // c---------------------------------------------------------------------
             // c Reference values of RMS-norms of solution error, for the
             // (408X408X408)
             // c grid, after 300 time steps, with DT = 1.0e+00
             // c---------------------------------------------------------------------
-            xceref.set(1, 0.3752393004482e+03);
-            xceref.set(2, 0.3084128893659e+02);
-            xceref.set(3, 0.9434276905469e+02);
-            xceref.set(4, 0.8230686681928e+02);
-            xceref.set(5, 0.7002620636210e+03);
+            xceref_verify.set(1, 0.3752393004482e+03);
+            xceref_verify.set(2, 0.3084128893659e+02);
+            xceref_verify.set(3, 0.9434276905469e+02);
+            xceref_verify.set(4, 0.8230686681928e+02);
+            xceref_verify.set(5, 0.7002620636210e+03);
 
             // c---------------------------------------------------------------------
             // c Reference value of surface integral, for the (408X408X408)
@@ -4415,8 +4413,8 @@ public class LU extends LUBase {
         // c---------------------------------------------------------------------
         for (m = 1; m <= 5; m++) {
 
-            xcrdif.set(m, Math.abs((xcr.get(m) - xcrref.get(m)) / xcrref.get(m)));
-            xcedif.set(m, Math.abs((xce.get(m) - xceref.get(m)) / xceref.get(m)));
+            xcrdif_verify.set(m, Math.abs((xcr.get(m) - xcrref_verify.get(m)) / xcrref_verify.get(m)));
+            xcedif_verify.set(m, Math.abs((xce.get(m) - xceref_verify.get(m)) / xceref_verify.get(m)));
 
         }
         xcidif = Math.abs((xci - xciref) / xciref);
@@ -4466,12 +4464,12 @@ public class LU extends LUBase {
             if (clss == 'U') {
                 Util.printer.p("          ").p(m).e(xcr.get(m)).ln();
                 // write(*, 2015) m, xcr.get(m);
-            } else if (xcrdif.get(m) > epsilon) {
+            } else if (xcrdif_verify.get(m) > epsilon) {
                 verified = false;
-                Util.printer.p(" FAILURE: ").p(m).e(xcr.get(m)).e(xcrref.get(m)).e(xcrdif.get(m)).ln();
+                Util.printer.p(" FAILURE: ").p(m).e(xcr.get(m)).e(xcrref_verify.get(m)).e(xcrdif_verify.get(m)).ln();
                 // write (*,2010) m,xcr.get(m),xcrref.get(m),xcrdif.get(m);
             } else {
-                Util.printer.p("          ").p(m).e(xcr.get(m)).e(xcrref.get(m)).e(xcrdif.get(m)).ln();
+                Util.printer.p("          ").p(m).e(xcr.get(m)).e(xcrref_verify.get(m)).e(xcrdif_verify.get(m)).ln();
                 // write (*,2011) m,xcr.get(m),xcrref.get(m),xcrdif.get(m);
             }
         }
@@ -4490,12 +4488,12 @@ public class LU extends LUBase {
             if (clss == 'U') {
                 Util.printer.p("          ").p(m).e(xce.get(m)).ln();
                 // write(*, 2015) m, xce.get(m);
-            } else if (xcedif.get(m) > epsilon) {
+            } else if (xcedif_verify.get(m) > epsilon) {
                 verified = false;
-                Util.printer.p(" FAILURE: ").p(m).e(xce.get(m)).e(xceref.get(m)).e(xcedif.get(m)).ln();
+                Util.printer.p(" FAILURE: ").p(m).e(xce.get(m)).e(xceref_verify.get(m)).e(xcedif_verify.get(m)).ln();
                 // write (*,2010) m,xce.get(m),xceref.get(m),xcedif.get(m);
             } else {
-                Util.printer.p("          ").p(m).e(xce.get(m)).e(xceref.get(m)).e(xcedif.get(m)).ln();
+                Util.printer.p("          ").p(m).e(xce.get(m)).e(xceref_verify.get(m)).e(xcedif_verify.get(m)).ln();
                 // write (*,2011) m,xce.get(m),xceref.get(m),xcedif.get(m);
             }
         }

@@ -70,7 +70,9 @@ public class MPI {
         }
 
         private void error(int i) {
-            Util.print("Error: bad use of MPI_Request. not ").print(i).print(" Rank=").print(commRank()).println();
+            Util.print("Error: bad use of MPI_Request. flag ").print(flag())
+                .print("!=").print(i)
+                .print(". Rank=").print(commRank()).println();
             abort();
         }
 
