@@ -66,6 +66,13 @@ public class Return extends ASTree implements Jump {
             return super.child(n);
     }
 
+    public void setChild(int n, ASTree c) {
+    	if (numChildren() == 1 && n == 0)
+            value = c;
+        else
+            super.setChild(n, c);
+    }
+
     public int outputs() { return 0; }
 
     public int output(int i) { throw new RuntimeException("no output"); }
