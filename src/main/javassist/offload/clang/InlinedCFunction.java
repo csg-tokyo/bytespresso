@@ -2,6 +2,7 @@
 
 package javassist.offload.clang;
 
+import javassist.NotFoundException;
 import javassist.offload.ast.ASTree;
 import javassist.offload.ast.Block;
 import javassist.offload.ast.Body;
@@ -25,5 +26,12 @@ public class InlinedCFunction extends InlinedFunction implements CallableCode {
 
     public void code(CodeGen gen) throws VisitorException {
         gen.append("/* inlined ").append(name()).append("() */\n");
+    }
+
+    public ASTree value() throws NotFoundException {
+        if (body() != null)
+            return body().value();
+        else
+            return super.value();
     }
 }

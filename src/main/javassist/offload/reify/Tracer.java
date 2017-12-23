@@ -408,7 +408,9 @@ public class Tracer {
         if (call.calledFunction() != null)
             return;         // already visited
 
+        call.clearActualTypeCache();
         CtClass clazz = call.actualTargetType();
+
         if (clazz == null) {
             clazz = call.targetType();
             CtMethod mth0 = (CtMethod)call.method(clazz);

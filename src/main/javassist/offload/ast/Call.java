@@ -101,7 +101,10 @@ public class Call extends ASTree {
     /**
      * Sets the expression computing the target.
      */
-    public void setTarget(ASTree t) { target = t; }
+    public void setTarget(ASTree t) {
+        actualTypeCacheValid = false;
+        target = t;
+    }
 
     /**
      * Returns the expected target type.
@@ -353,7 +356,7 @@ public class Call extends ASTree {
         }
         else
             if (n == 0) {
-                target = c;
+                setTarget(c);
                 return;
             }
             else if (n - 1 < args.length) {
@@ -366,8 +369,17 @@ public class Call extends ASTree {
 
     public CtClass type() { return returnType; }
 
+    public ASTree value() throws NotFoundException {
+        if (callee != null)
+            return callee.value();
+        else
+            return super.value();
+    }
+
     private boolean actualTypeCacheValid;
     private CtClass actualTypeCache;
+
+    public void clearActualTypeCache() { actualTypeCacheValid = false; }
 
     /**
      * Returns the actual type of the target object if it is known.

@@ -437,7 +437,7 @@ public class ImmutableClass extends ClassDef implements UserMetaclass {
             doCastForInlining(gen, vtype, value);
         else if (vtype.isInterface() && toType.subtypeOf(vtype)) {
             gen.append('(');
-            value.accept(gen);
+            doCastForInlining(gen, vtype, value);
             gen.append(").t").append(gen.typeDef(toType).typeId());
         }
         else if (toType.isInterface() && gen.heapMemory().portableInitialization()) {
