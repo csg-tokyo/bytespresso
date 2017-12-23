@@ -27,6 +27,7 @@ import javassist.offload.ast.Body;
 import javassist.offload.ast.Call;
 import javassist.offload.ast.Function;
 import javassist.offload.ast.GetField;
+import javassist.offload.ast.InlinedFunction;
 import javassist.offload.ast.TypeDef;
 import javassist.offload.ast.JVariable;
 import javassist.offload.ast.New;
@@ -433,7 +434,7 @@ public class ImmutableClass extends ClassDef implements UserMetaclass {
             vtype = type();
 
         if (vtype == toType)
-            value.accept(gen);
+            doCastForInlining(gen, vtype, value);
         else if (vtype.isInterface() && toType.subtypeOf(vtype)) {
             gen.append('(');
             value.accept(gen);
@@ -448,6 +449,23 @@ public class ImmutableClass extends ClassDef implements UserMetaclass {
         }
         else
             super.doCast(gen, toType, value);
+    }
+
+    private static void doCastForInlining(CodeGen gen, CtClass vtype, ASTree value)
+        throws VisitorException
+    {
+        if (vtype.isInterface() && value instanceof Call
+            && ((Call)value).calledFunction() instanceof InlinedFunction) {
+            /* When the return type is an ImmutableClass interface and the function is inlined,
+             * type casting must be inserted since the type of the inlined expression may
+             * not be that interface. 
+             */
+            gen.append("((").append(gen.typeDef(vtype).referenceType()).append(')');
+            value.accept(gen);
+            gen.append(')');
+        }
+        else
+            value.accept(gen);
     }
 
     protected boolean castNeeded(CodeGen gen, CtClass toType, ASTree value) {
