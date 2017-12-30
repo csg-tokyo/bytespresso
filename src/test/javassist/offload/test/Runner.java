@@ -147,6 +147,7 @@ public class Runner {
         testInlining8();
         testInlining9();
         testInlining10();
+        testInlining11();
         testForLoop();
         try {
             testSimpleNew();
@@ -2645,6 +2646,31 @@ public class Runner {
     @Inline public static int inliningTest10(int k) {
         InlineTest10 obj = new InlineTest10(k + 8, -3);
         return obj.value + obj.value2 * 100;
+    }
+
+    public static class TestRecursive {
+        public void initFields(int current) {
+            if (current == 0)
+                return;
+
+            initFields(current - 1);
+        }
+
+        @Inline
+        public final void application() {
+            initFields(9);
+        }
+    }
+
+    public @Test void testInlining11() throws Exception {
+        StdDriver2 d = new StdDriver2();
+        TestRecursive t = new TestRecursive();
+        d.invoke(Runner.class, "inliningTest11", null, new Object[] { t });
+        System.out.println("testInlining11 OK");
+    }
+
+    public static void inliningTest11(TestRecursive tr) {
+        tr.application();
     }
 
     public @Test void testForLoop() throws Exception {

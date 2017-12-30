@@ -195,6 +195,10 @@ public class Tracer {
 
     private static final int MAX_SPECIALIZATION = 50;
 
+    private int inlineDepth = 0;
+
+    private static final int MAX_INLINE = 10;
+
     /**
      * Attempts to perform function inlining.
      *
@@ -211,7 +215,7 @@ public class Tracer {
         // inline a function body if it is the body of a Java lambda. 
         TraceContext context2 = context.update(call.doInline());
 
-        if (context2.doInline()) {
+        if (inlineDepth < MAX_INLINE && context2.doInline()) {
             if (specialized == null)
                 specialized = ASTree.copy(f);     // instantiate a template
 
@@ -232,7 +236,13 @@ public class Tracer {
             // now back to contexts from contexts2. 
             context = context.update(inline);
             if (inline != null) {
-                visitElements(inline.body(), enclosing, context);
+                try {
+                    inlineDepth++;
+                    visitElements(inline.body(), enclosing, context);
+                } finally {
+                    inlineDepth--;
+                }
+
                 Inline anno = specialized.inline();
                 if (anno != null && anno.object() && inline.isSimpleBlock())
                     Inliner.inlineObjects(enclosing, inline);
