@@ -35,7 +35,7 @@ import javassist.offload.ast.Variable;
  * of a variable assignment expression, for example, {@code v = func(i);}. 
  */
 public class Inliner {
-        /**
+    /**
      * Inlines a function body.  It modifies {@code call} (and {@code caller})
      * if it successfully inlines the function body.
      * 

@@ -530,12 +530,30 @@ public class CodeGen implements Visitor {
         def.putField(this, expr);
     }
 
+    private CtClass currentReturnType = null;
+
     public void visit(Return statement) throws VisitorException {
-        if (!codeOfInlinedExpr(this, statement.expression())) {
-            out.append("return ");
-            if (statement.valueType() != CtClass.voidType)
-                CTypeDef.doCastOnValue(this, statement.valueType(),
-                                      statement.value());
+        CtClass oldReturnType = currentReturnType;
+        if (oldReturnType == null)
+            currentReturnType = statement.valueType();
+
+        try {
+            if (codeOfInlinedExpr(this, statement.expression()))
+                return;
+        }
+        finally {
+            currentReturnType = oldReturnType;
+        }
+
+        out.append("return ");
+        if (statement.valueType() != CtClass.voidType) {
+            CtClass retType;
+            if (currentReturnType != null)
+                retType = currentReturnType;
+            else
+                retType = statement.valueType();
+
+            CTypeDef.doCastOnValue(this, retType, statement.value());
         }
     }
 
