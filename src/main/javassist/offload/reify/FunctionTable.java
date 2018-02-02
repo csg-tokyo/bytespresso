@@ -190,10 +190,16 @@ public class FunctionTable<T extends JMethod, D extends Dispatcher> implements I
             return false;
     }
 
+    public int put(MethodInfo minfo, ASTree target, ASTree[] args, Function f) {
+        return put(minfo, target, args, f, -1);
+    }
+
     /**
      * Records a function body specialized for {@code target} and {@code args}.
+     * @param max       the function body is recorded only when {@code max} is -1 or {@code max}
+     *                  is more than the number of the bodies already recorded. 
      */
-    public int put(MethodInfo minfo, ASTree target, ASTree[] args, Function f) {
+    public int put(MethodInfo minfo, ASTree target, ASTree[] args, Function f, int max) {
         SpEntry e = new SpEntry(target, args, f);
         SpEntry found = functions.get(minfo);
         if (found == null) {
@@ -207,7 +213,9 @@ public class FunctionTable<T extends JMethod, D extends Dispatcher> implements I
                 found = found.next;
             }
 
-            found.next = e;
+            if (max < 0 || num < max)
+                found.next = e;
+
             return num;
         }
     }

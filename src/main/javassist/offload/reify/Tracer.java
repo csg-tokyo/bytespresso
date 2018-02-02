@@ -154,7 +154,7 @@ public class Tracer {
             }
 
             setArguments(sf, target, args);
-            int num = funcs.put(method, target, args, sf);
+            int num = funcs.put(method, target, args, sf, MAX_SPECIALIZATION);
             needVisiting = true;
             if (num < MAX_SPECIALIZATION) {
                 if (target != null || args != null)
