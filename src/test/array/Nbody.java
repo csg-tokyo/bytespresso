@@ -26,7 +26,7 @@ public class Nbody {
 
     public static void main(boolean onJVM) throws Exception {
         final VecDSL dsl = new VecDSL(N);
-        dsl.withOpenMP();
+        //dsl.withOpenMP();
         if (onJVM)
             dsl.onJVM();
 
